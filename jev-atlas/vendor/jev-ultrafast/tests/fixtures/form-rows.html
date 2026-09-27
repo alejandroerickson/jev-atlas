@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Form rows labelled by a neighbouring cell</title>
+<!-- A fixture for snapshot.js row labels: the label sits in the left cell and the
+     widget, several inline wrappers deep, in the right one - a common shape for
+     forms built from a component library. Load it in a browser and evaluate
+     snapshot.js, which is now an arrow function: (<paste>)({dialog: [], busy: []}). -->
+<table class="form-table">
+  <tr>
+    <td class="form-table-left"><label class="form-table-label">Name</label></td>
+    <td class="form-table-right"><input id="name" aria-label="Name"></td>
+  </tr>
+  <tr>
+    <td class="form-table-left"><label
+      class="form-table-label form-table-label-required">Product:</label></td>
+    <td class="form-table-right">
+      <app-search-drop-down><span class="search-dropdown"><span class="widget"
+        ><span class="dropdown-wrap"><input role="combobox" value=""></span></span></span>
+      </app-search-drop-down>
+    </td>
+  </tr>
+  <tr>
+    <td class="form-table-left"><label
+      class="form-table-label form-table-label-required">Colour *</label></td>
+    <td class="form-table-right">
+      <app-search-drop-down><span class="search-dropdown"><span class="widget"
+        ><span class="dropdown-wrap"><input role="combobox" title="Blue" value="Blue"></span></span></span>
+      </app-search-drop-down>
+    </td>
+  </tr>
+  <tr>
+    <td class="form-table-left"><label class="form-table-label">Size</label></td>
+    <td class="form-table-right">
+      <span class="widget dropdown"><select><option selected>Small</option><option>Large</option></select></span>
+    </td>
+  </tr>
+</table>

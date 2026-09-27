@@ -735,3 +735,15 @@ textarea:focus-visible {
 }
 
 .operation-choices{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.operation-choice{font-size:10px;padding:5px 7px;border:1px solid #dbe2d4;border-radius:5px;color:#687260}.operation-choice.best{color:#185c3b;background:#eef6e5;border-color:#88ac79}
+
+/* Local change: the atlas page context, and the region a control belongs to. */
+.page-context {
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.5;
+  border-left: 2px solid currentColor;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  opacity: 0.85;
+}
+.choice-label small .region { opacity: 1; font-weight: 600; }

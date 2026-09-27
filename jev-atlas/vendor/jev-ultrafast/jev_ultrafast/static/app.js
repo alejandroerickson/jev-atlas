@@ -18,6 +18,10 @@ const escape = (value) =>
       ],
   );
 const percent = (value) => `${(value * 100).toFixed(value < 0.01 ? 1 : 0)}%`;
+const clip = (value, limit) =>
+  String(value ?? "").length > limit
+    ? String(value).slice(0, limit - 1) + "…"
+    : String(value ?? "");
 async function call(name, body = {}) {
   const response = await fetch(`/api/${name}`, {
     method: "POST",
@@ -68,7 +72,11 @@ async function perform(fn, label) {
 }
 function render() {
   if (!state) return;
-  $("helper").textContent = `Text helper · ${state.text_model}`;
+  $("helper").textContent =
+    `Text helper · ${state.text_model}` +
+    (state.atlas ? ` · atlas ${state.atlas.split(/[\\/]/).pop()}` : " · no atlas");
+  document.querySelector(".model-tag").innerHTML =
+    `${escape(state.model || "jev-latest")} <span>+ text helper</span>`;
   $("plan").innerHTML = (state.plan || [])
     .map(
       (goal, i) =>
@@ -84,7 +92,9 @@ function render() {
     ready: "Page observed · ready for a decision",
     predicted: "Choice ready · inspect or execute",
     done: "Jev reports complete · inspect the page",
-    blocked: "Stopped · no supported next action",
+    blocked: state.stop_reason?.startsWith("loop")
+      ? "Stopped · repeating the same actions"
+      : "Stopped · no supported next action",
   };
   $("status").textContent = labels[state.status] || state.status;
   if (!page) {
@@ -93,7 +103,10 @@ function render() {
   }
   $("empty").hidden = true;
   $("screenshot").hidden = false;
-  $("screenshot").src = `data:image/jpeg;base64,${page.screenshot}`;
+  if (page.screenshot)
+    $("screenshot").src = `data:${page.screenshot_mime || "image/jpeg"};base64,${page.screenshot}`;
+  $("page-context").textContent = page.context || "";
+  $("page-context").hidden = !page.context;
   $("url").textContent = page.url;
   $("page-title").textContent = page.title;
   $("action-count").textContent = `${state.elements.length} elements`;
@@ -115,7 +128,7 @@ function render() {
   if (d) elements.sort((a,b)=>probability(b)-probability(a));
   $("choices").innerHTML = elements.map(e => {
     const p = probability(e);
-    return `<div class="choice ${selectedIndex === e.index ? 'best' : ''}" data-action="${escape(e.index)}"><span class="choice-id">[${escape(e.index)}]</span><div class="choice-label">${escape(e.label)}<small>${escape(e.role)} · ${escape(e.operations.join(' / '))}${e.value ? ' · '+escape(e.value) : ''}${e.checked !== undefined ? ' · checked '+escape(e.checked) : ''}</small>${p >= 0 ? `<div class="bar" style="--probability:${p*100}%"></div>` : ''}</div><span class="probability">${p >= 0 ? percent(p) : '—'}</span></div>`;
+    return `<div class="choice ${selectedIndex === e.index ? 'best' : ''}" data-action="${escape(e.index)}"><span class="choice-id">[${escape(e.index)}]</span><div class="choice-label">${escape(e.label)}<small>${e.region ? `<span class="region">${escape(e.region)}</span> · ` : ''}${escape(e.role)} · ${escape(e.operations.join(' / '))}${e.value ? ' · '+escape(e.value) : ''}${e.checked !== undefined ? ' · checked '+escape(e.checked) : ''}${e.what ? ' · '+escape(clip(e.what, 90)) : ''}</small>${p >= 0 ? `<div class="bar" style="--probability:${p*100}%"></div>` : ''}</div><span class="probability">${p >= 0 ? percent(p) : '—'}</span></div>`;
   }).join('');
   const targets = new Map();
   for (const a of page.actions) if (a.rect && !targets.has(a.node)) targets.set(a.node, a);
@@ -128,7 +141,7 @@ function render() {
     ? state.history
         .map(
           (h) =>
-            `<div class="trace-row"><span class="number">${String(h.step).padStart(2, "0")}</span><div>${escape(h.action)}${h.text ? ` <b>“${escape(h.text)}”</b><small>${escape(h.text_helper)}</small>` : ""}</div><span class="time">${h.latency_ms} ms · ${percent(h.probability)}</span><span class="effect">${h.page_changed ? "Page changed" : "No change observed"}</span></div>`,
+            `<div class="trace-row"><span class="number">${String(h.step).padStart(2, "0")}</span><div>${escape(h.action)}${h.text ? ` <b>“${escape(h.text)}”</b><small>${escape(h.text_helper)}</small>` : ""}</div><span class="time">${h.latency_ms} ms · ${percent(h.probability)}</span><span class="effect">${h.page_changed ? "Page changed" : "No change observed"}${h.model ? ` · ${escape(h.model)}` : ""}</span></div>`,
         )
         .join("")
     : '<p class="muted">Each executed action leaves an observed result.</p>';

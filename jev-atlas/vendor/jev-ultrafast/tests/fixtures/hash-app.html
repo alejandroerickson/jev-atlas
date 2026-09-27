@@ -1,0 +1,86 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Hash-routed app patterns</title>
+<!-- A fixture for snapshot.js and the executor (tests/test_snapshot_dom.py): hash
+     routes, native <dialog>, date inputs behind a framework-style value tracker,
+     visually hidden radio and checkbox pills, duplicate labels in different blocks,
+     identical per-row buttons, landmarks and a link that opens a new tab. -->
+<style>
+  body { font: 12px sans-serif; margin: 8px; }
+  .vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); }
+  .pill { display: inline-block; padding: 2px 6px; border: 1px solid #888; }
+  fieldset { display: inline-block; vertical-align: top; }
+  table td { padding: 1px 4px; }
+</style>
+<header>
+  <a href="#content">Skip to content</a>
+  <nav aria-label="Sections">
+    <a href="#/portfolio">Portfolio</a>
+    <a href="#/projects">Projects</a>
+    <a href="#!/legacy">Legacy</a>
+    <a href="/app/other?x=1#section-3">Plain anchor</a>
+    <a href="#/manual" target="_blank">User manual</a>
+  </nav>
+</header>
+<main id="content">
+  <nav aria-label="Breadcrumb"><a href="#/projects">Projects</a> / <span>P-1</span></nav>
+  <h1>Estimate</h1>
+  <section aria-label="Filters">
+    <label class="pill"><input class="vh" type="radio" name="kind" value="all" checked>All</label>
+    <label class="pill"><input class="vh" type="radio" name="kind" value="drill">Drilling</label>
+    <input id="hole" type="checkbox" style="display:none"><label for="hole" class="pill">Hole A</label>
+    <input id="ghost" type="checkbox" style="display:none">
+  </section>
+  <form>
+    <fieldset><legend>Indicated</legend>
+      <label>Grade <input name="ind-grade"></label>
+    </fieldset>
+    <fieldset><legend>Inferred</legend>
+      <label>Grade <input name="inf-grade"></label>
+    </fieldset>
+    <label>Completed <input id="completed" type="date"></label>
+    <label>Start time <input id="start" type="time"></label>
+  </form>
+  <table>
+    <tbody>
+      <tr><td>selected</td><td>T-01</td><td>Main zone</td>
+        <td><button type="button">Lock</button></td><td><button type="button">Exclude</button></td></tr>
+      <tr><td>selected</td><td>T-02</td><td>Hinge zone</td>
+        <td><button type="button">Lock</button></td><td><button type="button">Exclude</button></td></tr>
+      <tr><td>dropped</td><td>T-03</td><td>East swarm</td>
+        <td><button type="button">Lock</button></td><td><button type="button">Exclude</button></td></tr>
+    </tbody>
+  </table>
+  <div style="width:300px; overflow-x:auto"><div style="width:3000px; white-space:nowrap">Wide row
+    <button type="button" style="margin-left:2600px" onclick="window.farClicked=true">Far edit</button></div></div>
+  <div style="width:300px; overflow:hidden"><div style="width:3000px; white-space:nowrap">Clipped row
+    <button type="button" style="margin-left:2600px">Clipped edit</button></div></div>
+  <p>Comments</p>
+  <label for="comment">Add a comment</label> <textarea id="comment"></textarea>
+</main>
+<dialog id="save" aria-label="Save this scenario"><p>Name it.</p><button type="button">Save</button></dialog>
+<dialog id="named" aria-labelledby="named-h"><h3 id="named-h">Update hole</h3><button type="button">Close</button></dialog>
+<dialog id="plain"><h2 class="x">Reset tenant</h2><span class="dlg-caption">Custom caption</span>
+  <button type="button">Reset</button></dialog>
+<script>
+  // Framework-style controlled input: the instance's own value setter updates a
+  // tracker, and an input event counts as a change only when the DOM value differs
+  // from it. Assigning `input.value = v` therefore fires no change; only the
+  // prototype setter plus an input event does (the pattern React relies on).
+  window.changes = [];
+  function track(input) {
+    const proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    let tracked = input.value;
+    Object.defineProperty(input, 'value', {
+      configurable: true,
+      get() { return proto.get.call(this); },
+      set(v) { tracked = String(v); proto.set.call(this, v); },
+    });
+    input.addEventListener('input', () => {
+      const now = proto.get.call(input);
+      if (now !== tracked) { tracked = now; window.changes.push([input.id, now]); }
+    });
+  }
+  track(document.getElementById('completed'));
+  track(document.getElementById('start'));
+</script>

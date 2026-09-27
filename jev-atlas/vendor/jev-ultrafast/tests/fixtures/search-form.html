@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Search without a button</title>
+<!-- A fixture for PRESS_ENTER (tests/test_snapshot_dom.py): a top-bar search form
+     with no Search button that routes on submit, like a hash-routed app's search
+     box; a plain form field; and a search field that owns a suggestion list. -->
+<style> body { font: 12px sans-serif; margin: 8px; } </style>
+<header>
+  <form role="search" id="top"><input type="search" aria-label="Search the site" autocomplete="off"></form>
+</header>
+<main>
+  <h1>Home</h1>
+  <form id="plain"><label>Name <input id="name"></label> <label>Notes <textarea id="notes"></textarea></label></form>
+  <label>Suggest <input id="suggest" type="search" aria-autocomplete="list" aria-controls="suggestions"></label>
+  <ul id="suggestions" role="listbox"></ul>
+</main>
+<script>
+  window.submits = [];
+  document.getElementById('top').addEventListener('submit', ev => {
+    ev.preventDefault();
+    location.hash = '#/search?q=' + encodeURIComponent(ev.target.querySelector('input').value.trim());
+  });
+  document.getElementById('plain').addEventListener('submit', ev => {
+    ev.preventDefault();
+    window.submits.push(document.getElementById('name').value);
+  });
+</script>

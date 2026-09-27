@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Type-ahead suggestions</title>
+<!-- A fixture for snapshot.js option owners: the suggestion list is appended to the
+     body, outside the dialog, and is tied to its field only by aria-controls. -->
+<div role="dialog" aria-modal="true">
+  <h2>Add Line</h2>
+  <table class="form-table">
+    <tr>
+      <td><label class="form-table-label">Product</label></td>
+      <td><app-search-drop-down><span class="widget"><span class="dropdown-wrap"
+        ><input role="combobox" aria-controls="product-list" aria-expanded="true" value="1422"
+        ></span></span></app-search-drop-down></td>
+    </tr>
+  </table>
+</div>
+<div class="popup-container" style="position:absolute;top:120px;left:20px">
+  <ul id="product-list" role="listbox">
+    <li role="option">1422 / Chairs / Oak</li>
+    <li role="option">1423 / Chairs / Pine</li>
+  </ul>
+</div>

@@ -1,0 +1,5 @@
+# Local change: resolve from public PyPI whatever package index this machine's own
+# uv configuration names, so `uv run` never rewrites uv.lock with private registry URLs.
+[[index]]
+url = "https://pypi.org/simple"
+default = true

@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Rows, lists and cards</title>
+<!-- A fixture for row labels and row context (tests/test_snapshot_dom.py): a flat
+     grid whose lines are runs of sibling cells, a table whose only link is an id,
+     cards with identical buttons, a tab strip, a column of tickets under a head,
+     and a sortable header row. -->
+<style>
+  body { font: 12px sans-serif; margin: 8px; }
+  .ledger { display: grid; grid-template-columns: repeat(4, auto); gap: 2px 8px; }
+  .card, .col { border: 1px solid #888; margin: 2px; padding: 2px; display: inline-block; vertical-align: top; }
+</style>
+<main>
+  <h2>Needs attention</h2>
+  <div class="ledger">
+    <span class="k">Approval overdue</span><span class="w"><a href="#/a/1">Programme approval: First pass</a></span><span class="d">due yesterday</span><span class="a"><span class="chip">Budget check</span></span>
+    <span class="k">Approval due</span><span class="w"><a href="#/a/2">Land access: Copper Hollow</a></span><span class="d">due in 3 days</span><span class="a"><span class="chip">Tenure review</span></span>
+    <span class="k">Tenure expiring</span><span class="w"><a href="#/t/3">E 50/4997</a></span><span class="d">expires in 19 days</span><span class="a"><span class="chip">expiring</span></span>
+  </div>
+  <h2>Related requests</h2>
+  <table>
+    <thead><tr><th scope="col"><button type="button">Sort by Request</button></th><th scope="col"><button type="button">Sort by Title</button></th><th scope="col">Status</th></tr></thead>
+    <tbody>
+      <tr><td><a href="#/r/130">WF-2026-0130</a></td><td>Programme approval: Gradient-array IP survey over the southern block</td><td><span>approved</span></td></tr>
+      <tr><td><a href="#/r/146">WF-2026-0146</a></td><td>Programme approval: Scout RC, chargeability anomalies A and B</td><td><span>pending</span></td></tr>
+    </tbody>
+  </table>
+  <h2>Cards</h2>
+  <div class="cards">
+    <div class="card"><h3>Kettle Lake camp</h3><span class="st">open</span><div class="bar"><button type="button">Open</button><button type="button">Edit</button></div></div>
+    <div class="card"><h3>Sable Dome camp</h3><span class="st">closed</span><div class="bar"><button type="button">Open</button><button type="button">Edit</button></div></div>
+  </div>
+  <div class="groups">
+    <div class="group"><span class="label">Projects</span><a href="#/p/all">All active 12</a><a href="#/p/hold">On hold 1</a><a href="#/p/closed">Closed 2</a></div>
+    <div class="group"><span class="label">Batches</span><a href="#/b/all">All batches 40</a><a href="#/b/lab">At the laboratory 3</a></div>
+  </div>
+  <div class="board">
+    <div class="col"><a class="head" href="#/s/1">Drilling: 3 projects</a><a class="t" href="#/p/1">Wolverine Creek</a><a class="t" href="#/p/2">Mount Aster</a><a class="t" href="#/p/3">Kettle Lake</a></div>
+    <div class="col"><a class="head" href="#/s/2">Scoping: 1 project</a><a class="t" href="#/p/4">Lorimer</a></div>
+  </div>
+  <ul class="plain">
+    <li><span class="item-label">First item</span></li>
+    <li><button type="button">Remove</button></li>
+  </ul>
+</main>

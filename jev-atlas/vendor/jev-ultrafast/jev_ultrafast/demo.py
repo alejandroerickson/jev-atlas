@@ -4,6 +4,7 @@ import atexit
 import json
 import os
 import secrets
+import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -16,6 +17,8 @@ ROOT = Path(__file__).parent
 PORT = int(os.environ.get("TYPESAFE_DEMO_PORT", "8766"))
 ORIGIN = f"http://127.0.0.1:{PORT}"
 TOKEN = secrets.token_urlsafe(32)
+# Local change: point the inspector at any application, keeping the goal box.
+START_URL = os.environ.get("JEV_DEMO_URL")
 LOCK = threading.Lock()
 AGENT = None
 
@@ -31,7 +34,13 @@ def load_environment():
 
 def response_state():
     state = AGENT.snapshot() if AGENT else {"page": None, "status": "idle", "history": [], "decision": None}
-    return {**state, "text_model": os.environ.get("TEXT_MODEL", "deepseek-chat"), "max_steps": MAX_STEPS}
+    return {
+        **state,
+        "text_model": os.environ.get("TEXT_MODEL", "deepseek-chat"),
+        "max_steps": MAX_STEPS,
+        # Local change: which application atlas, if any, the run is using.
+        "atlas": os.environ.get("JEV_ATLAS"),
+    }
 
 
 def close_browser():
@@ -51,10 +60,19 @@ def command(name, body):
         if not goal or len(goal) > 2000:
             raise ValueError("Enter 1–2,000 characters")
         close_browser()
+        # Local change: a command run before every Start demo, e.g. to reset the application's
+        # data so each run starts from the same state (jev-atlas/inspect.sh sets it for ADIT).
+        before = os.environ.get("JEV_BEFORE_RUN")
+        if before:
+            done = subprocess.run(before, shell=True, capture_output=True, text=True, timeout=120)
+            print(f"Before run: {before} -> exit {done.returncode} {done.stdout.strip()[:200]}", flush=True)
+            if done.returncode:
+                raise RuntimeError(f"JEV_BEFORE_RUN failed: {(done.stderr or done.stdout).strip()[-300:]}")
         AGENT = Agent(
-            "https://www.google.com/travel/flights?hl=en"
-            if scenario == "flights"
-            else f"{ORIGIN}/fixture.html?scenario={scenario}",
+            START_URL
+            or ("https://www.google.com/travel/flights?hl=en"
+                if scenario == "flights"
+                else f"{ORIGIN}/fixture.html?scenario={scenario}"),
             goal,
             screenshots=True,
             record_dir=Path.cwd() / "artifacts" / "frames" if body.get("record") else None,
