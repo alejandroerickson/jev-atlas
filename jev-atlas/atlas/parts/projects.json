@@ -1,0 +1,2278 @@
+{
+ "app": "ADIT",
+ "version": "2026-09-22",
+ "area": "projects",
+ "selectors": {
+  "dialog": [
+   "dialog[open]"
+  ]
+ },
+ "pages": [
+  {
+   "id": "projects-register",
+   "match": {
+    "url_regex": "#/projects/?(\\?.*)?$"
+   },
+   "name": "Projects register",
+   "what": "The list of exploration projects (properties): one row per project with its id, name, commodity, jurisdiction, stage in the pipeline, status, project geologist (a dashed 'vacant' chip when the role is unfilled), area under tenure, fiscal-year budget, spent with a progress bar, forecast against budget and next gate date. Active projects are shown by default; the left panel cuts the register to on-hold or closed projects, to one commodity or to one stage, and the Find box narrows by id, name or jurisdiction. Each id or name opens that project's record.",
+   "not_here": "A project's tenements, programmes, holes, batches, estimates, budget detail, approvals and audit trail are tabs on the project record, reached by opening the project from this list. Portfolio-wide budget and totals are under Portfolio. Programmes, holes and batches across all projects are the Programmes, Drilling and Assays sections of the top navigation.",
+   "leads_to": {
+    "Project id or name link": "project-overview",
+    "New project": "projects-new",
+    "Left panel cuts (All active, On hold, Closed, By commodity, By stage)": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || h.textContent.trim()!=='Projects') return null; const m=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.trim()).filter(Boolean); return 'Register shows '+m.join(' · ')+(m.length<2?' (all active projects)':''); })()",
+    "(() => { const a=document.querySelector('nav.l2 a[aria-current=\"page\"]'); if(!a) return null; const sec=a.parentElement.querySelector('.sec'); return 'Left panel selection: '+(sec?sec.textContent.trim()+' › ':'')+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); })()",
+    "(() => { const i=document.querySelector('main .filters input[type=search]'); return i && i.value ? 'Find box contains \"'+i.value+'\"' : null; })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "projects-new",
+   "match": {
+    "url_regex": "#/projects/new/?(\\?.*)?$"
+   },
+   "name": "New project form",
+   "what": "Creates a project. It asks for a project name, commodity, jurisdiction, country, area in square kilometres, the fiscal-year budget, the project geologist and a description. New projects start at the Reconnaissance stage and take the next number from the tenant's auto-numbering rule. Create project validates the form and, if it is complete, opens the new project's record.",
+   "not_here": "Editing an existing project: the Edit button on that project's record. Stage changes: Stage-gate decision on the project record. Creating programmes: the project's Programmes tab or the Programmes section.",
+   "leads_to": {
+    "Create project (when valid)": "project-overview",
+    "Cancel": "projects-register",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const f=document.querySelector('main form.panel'); if(!f) return null; return 'New project form: '+[...f.querySelectorAll('label.field')].map(l=>{const n=(l.querySelector('span')||{}).textContent; const f=l.querySelector('input,select,textarea'); if(!f||!n) return null; let v=f.tagName==='SELECT'?((f.selectedOptions[0]||{}).textContent||''):f.value; if(f.tagName==='TEXTAREA') v=v.trim()?v.trim().length+' characters':''; const e=l.querySelector('.error'); return n.replace(/\\s+/g,' ').trim()+' = '+(v===''?'(empty)':v)+(f.required?' (required)':'')+(e?' (invalid: '+e.textContent.trim()+')':''); }).filter(Boolean).join('; '); })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "project-overview",
+   "match": {
+    "url_regex": "#/projects/(?!new(?:[/?]|$))[^/?#]+/?(\\?.*)?$"
+   },
+   "name": "Project record, Overview tab",
+   "what": "One project's summary: fiscal-year budget and spend, area under tenure, holes drilled, significant intercepts and the latest estimate; the description and team (exploration manager, project geologist); the stage history through the pipeline; recent programmes; open items (pending approvals, batches on QAQC hold, expiring tenements); and the comments panel, where typing @ and a colleague's first name notifies them. The header carries Watch, Edit and Stage-gate decision; the tab strip leads to the project's Tenure, Programmes, Drilling, Assays, Resource, Budget, Approvals and Activity.",
+   "not_here": "Tenement renewal (Lodge renewal): the Tenure tab. The budget ledger and monthly spend: the Budget tab. Every approval raised on the project: the Approvals tab; the audit trail: Activity. Deciding a request: the request's own page in Approvals. Budget, commodity and jurisdiction: set at creation; later changes go through support. A heading reading 'Project not found' means the address holds an unknown project id; the Projects register lists every project.",
+   "leads_to": {
+    "Tabs": "project-tenure / project-programmes / project-drilling / project-assays / project-resource / project-budget / project-approvals / project-activity",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const s=document.querySelector('main section[aria-labelledby=\"ov-open\"]'); if(!s) return null; const rows=[...s.querySelectorAll('.row')].map(r=>[...r.children].map(c=>c.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' — ')); return 'Open items: '+(rows.length?rows.join('; '):'none'); })()",
+    "(() => { const t=document.querySelector('main form.comment-form textarea'); if(!t) return null; const n=document.querySelectorAll('main ul.comments > li').length; return 'Comments: '+n+' posted'+(t.value.trim()?'; draft typed, awaiting Post comment ('+t.value.trim().length+' characters)':''); })()",
+    "(() => { const e=document.querySelector('main p.empty'); return e ? 'Notice: '+e.textContent.trim() : null; })()"
+   ]
+  },
+  {
+   "id": "project-tenure",
+   "match": {
+    "url_regex": "#/projects/[^/?#]+/tenure/?(\\?.*)?$"
+   },
+   "name": "Project record, Tenure tab",
+   "what": "Every tenement held for this project with its type, holder, status, grant and expiry dates, area, annual expenditure commitment, spend against that commitment and rent due, with totals above the table. For a current or expiring tenement, users with the tenure write permission (the Tenure & Permitting Officer role) see a Lodge renewal button on its row, which starts the tenement-renewal workflow (an expenditure check by Finance, then lodgement by Tenure).",
+   "not_here": "Deciding a renewal already lodged: its request in Approvals. A tenement whose renewal is lodged shows status 'renewal lodged'. Lodge renewal appears on current or expiring tenements for users with the tenure permission (the Tenure & Permitting Officer role; to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)). Budget, commodity and jurisdiction: set at creation; later changes go through support.",
+   "leads_to": {
+    "Overview tab": "project-overview",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register",
+    "Lodge renewal": "tenement-renewal-dialog"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const t=document.querySelector('main table.tbl'); if(!t) return null; const hs=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim().toLowerCase()); const col=n=>hs.findIndex(h=>h.startsWith(n)); const iT=col('tenement'), iS=col('status'), iE=col('expires'); const rows=[...t.querySelectorAll('tbody tr')].map(r=>{const c=r.querySelectorAll('td'); if(c.length<=Math.max(iT,iS,iE)) return null; return c[iT].textContent.trim()+': '+c[iS].textContent.trim()+', expires '+c[iE].textContent.replace(/\\s+/g,' ').trim()+(r.querySelector('button')?' [Lodge renewal button shown]':''); }).filter(Boolean); if(!rows.length) return null; const any=t.querySelector('tbody button'); return 'Tenements: '+rows.join('; ')+(any?'':'. Lodge renewal: offered to the Tenure & Permitting Officer role on current or expiring tenements (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)).'); })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()"
+   ]
+  },
+  {
+   "id": "project-programmes",
+   "match": {
+    "url_regex": "#/projects/[^/?#]+/programmes/?(\\?.*)?$"
+   },
+   "name": "Project record, Programmes tab",
+   "what": "The project's field programmes in all phases (drilling, geophysics, geochemistry, mapping, metallurgy, baseline), with phase, dates, metres drilled of planned, budget, spent and lead. For users with the programme write permission (Project Geologist role) a New programme button opens the programme form with this project already selected.",
+   "not_here": "A programme's own detail, crew, rig and approval submission: the programme's page in the Programmes section (its id or name link). Deciding a request: the request's own page in Approvals. Budget, commodity and jurisdiction: set at creation; later changes go through support.",
+   "leads_to": {
+    "Overview tab": "project-overview",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()"
+   ]
+  },
+  {
+   "id": "project-drilling",
+   "match": {
+    "url_regex": "#/projects/[^/?#]+/drilling/?(\\?.*)?$"
+   },
+   "name": "Project record, Drilling tab",
+   "what": "Hole counts (planned, drilling, abandoned), metres drilled, average depth, the best intercept, and the table of the project's drillholes with programme, type, status, collar coordinates, azimuth, dip, planned and actual depth and best intercept. 'open in Drilling' shows the same holes in the Drilling section.",
+   "not_here": "Logging, sampling and editing a hole: the hole's own page in the Drilling section. Deciding a request: the request's own page in Approvals. Budget, commodity and jurisdiction: set at creation; later changes go through support.",
+   "leads_to": {
+    "Overview tab": "project-overview",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()"
+   ]
+  },
+  {
+   "id": "project-assays",
+   "match": {
+    "url_regex": "#/projects/[^/?#]+/assays/?(\\?.*)?$"
+   },
+   "name": "Project record, Assays tab",
+   "what": "The project's sample batches: laboratory, status, holes, sample count, QAQC insertions (standards / blanks / duplicates), failures, dispatch and receipt dates, turnaround and method. 'open in Assays' shows them in the Assays section.",
+   "not_here": "Creating a batch, importing results and reviewing QAQC failures: the Assays section. Deciding a request: the request's own page in Approvals. Budget, commodity and jurisdiction: set at creation; later changes go through support.",
+   "leads_to": {
+    "Overview tab": "project-overview",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()"
+   ]
+  },
+  {
+   "id": "project-resource",
+   "match": {
+    "url_regex": "#/projects/[^/?#]+/resource/?(\\?.*)?$"
+   },
+   "name": "Project record, Resource tab",
+   "what": "The latest released resource estimate (or the latest of any status if none is released): contained metal, tonnes, grade, in-situ value at the price deck, the P10/P50/P90 forecast, the split by category (measured, indicated, inferred), and the project's estimate history. If the project has no estimate, the tab says so.",
+   "not_here": "Creating or releasing an estimate and editing the price deck: the Resources section ('open in Resources'). Deciding a request: the request's own page in Approvals. Budget, commodity and jurisdiction: set at creation; later changes go through support.",
+   "leads_to": {
+    "Overview tab": "project-overview",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const h=document.querySelector('main .panel .ph h2'); const r=document.querySelector('main .panel .ph .r'); if(!h || !document.querySelector('main nav.tabs a[aria-current=\"page\"][href$=\"/resource\"]')) return null; return 'Estimate shown: '+h.textContent.trim()+(r?' ('+r.textContent.trim()+')':''); })()",
+    "(() => { const e=document.querySelector('main p.empty'); return e ? 'Notice: '+e.textContent.trim() : null; })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()"
+   ]
+  },
+  {
+   "id": "project-budget",
+   "match": {
+    "url_regex": "#/projects/[^/?#]+/budget/?(\\?.*)?$"
+   },
+   "name": "Project record, Budget tab",
+   "what": "The project ledger: approved budget, committed, spent and year-end forecast against budget, programme budgets over all years, spend by month against plan, programme budget by type, and the programme ledgers table. Read-only.",
+   "not_here": "Changing the year-end forecast: the Edit button in the project header. Budget variance requests: raised and decided in Approvals. Portfolio-wide budget: Portfolio. The approved budget: set at creation; later changes go through support.",
+   "leads_to": {
+    "Overview tab": "project-overview",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()"
+   ]
+  },
+  {
+   "id": "project-approvals",
+   "match": {
+    "url_regex": "#/projects/[^/?#]+/approvals/?(\\?.*)?$"
+   },
+   "name": "Project record, Approvals tab",
+   "what": "Every approval request raised on this project (programme approvals, purchase orders, tenement renewals, budget variances, stage-gate reviews and others) with workflow, status, current step and who holds it, requester, amount, submitted and due dates. Each opens the request.",
+   "not_here": "Approving, rejecting or commenting on a request: the request's own page in Approvals. Raising a stage-gate review request: Approvals; recording the decision itself: Stage-gate decision on this project. Budget, commodity and jurisdiction: set at creation; later changes go through support.",
+   "leads_to": {
+    "Overview tab": "project-overview",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()"
+   ]
+  },
+  {
+   "id": "project-activity",
+   "match": {
+    "url_regex": "#/projects/[^/?#]+/activity/?(\\?.*)?$"
+   },
+   "name": "Project record, Activity tab",
+   "what": "The audit trail for the project and its records (programmes, approvals, batches, estimates, tenements): when, who, action, record and detail, newest first. Read-only.",
+   "not_here": "The tenant-wide audit log: Admin. Posting comments: the Overview tab. Deciding a request: the request's own page in Approvals. Budget, commodity and jurisdiction: set at creation; later changes go through support.",
+   "leads_to": {
+    "Overview tab": "project-overview",
+    "Edit": "project-edit-dialog",
+    "Stage-gate decision": "project-stage-gate-dialog",
+    "Projects breadcrumb": "projects-register"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if(!h || !document.querySelector('main nav.tabs')) return null; const idEl=h.querySelector('.id'); const id=idEl?idEl.textContent.trim():''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const meta=[...document.querySelectorAll('main .head .meta > *')].map(e=>e.textContent.replace(/\\s+/g,' ').trim()).filter(Boolean).join(' · '); return 'Project in view: '+name+(id?' ('+id+')':'')+(meta?' · '+meta:''); })()",
+    "(() => { const a=document.querySelector('main nav.tabs a[aria-current=\"page\"]'); return a ? 'Open tab: '+[...a.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim() : null; })()",
+    "(() => { if(!document.querySelector('main nav.tabs')) return null; const b=[...document.querySelectorAll('main .head .actions button')].map(e=>e.textContent.trim()); const miss=['Edit','Stage-gate decision'].filter(x=>!b.includes(x)); return 'Project header actions shown to the signed-in user: '+(b.join(', ')||'none')+(miss.length?'; '+miss.join(' and ')+': offered to roles holding that permission, on open projects (to act with that role, switch user in the account menu to a person who holds it (People and roles lists who holds each role))':''); })()",
+    "(() => { const s=JSON.parse(localStorage.getItem('adit.session.v1')||'{}'); const w=(JSON.parse(localStorage.getItem('adit.tenant.v1')||'{}')||{}).world; const u=w&&w.users&&w.users.find(x=>x.id===s.currentUserId); return u ? 'Signed in as '+u.name+', '+u.title : null; })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast span')].map(e=>e.textContent.trim()).filter(Boolean); return t.length ? 'Message shown: '+t.join(' | ') : null; })()",
+    "(() => { const all=document.querySelectorAll('main table.tbl'); const t=all[all.length-1]; if(!t) return null; const cap=(t.querySelector('caption')||{}).textContent||'Table'; const foot=t.closest('div').parentElement.querySelector('.tbl-foot span'); const s=t.querySelector('th[aria-sort=\"ascending\"],th[aria-sort=\"descending\"]'); const rows=t.querySelectorAll('tbody tr').length; return 'Table \"'+cap.trim()+'\": '+(foot?foot.textContent.trim():rows+' rows shown')+(s?', sorted by '+s.textContent.trim()+' '+s.getAttribute('aria-sort'):''); })()"
+   ]
+  },
+  {
+   "id": "project-edit-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label^=\"Edit PRJ-\"]"
+   },
+   "name": "Edit project dialog",
+   "what": "Changes the project's name, project geologist, next gate date, year-end forecast and description. Save keeps the changes and closes the dialog; Cancel, the close cross or Escape discard them.",
+   "not_here": "Budget, commodity and jurisdiction: set at creation; later changes go through support. Stage changes: the Stage-gate decision dialog. Project geologist lists inactive geologists for reference; the active ones are selectable.",
+   "facts_js": [
+    "(() => { const d=document.querySelector('dialog[open][aria-label^=\"Edit PRJ-\"]'); if(!d) return null; return 'Edit form: '+[...d.querySelectorAll('label.field')].map(l=>{const n=(l.querySelector('span')||{}).textContent; const f=l.querySelector('input,select,textarea'); if(!f||!n) return null; let v=f.tagName==='SELECT'?((f.selectedOptions[0]||{}).textContent||''):f.value; if(f.tagName==='TEXTAREA') v=v.trim()?v.trim().length+' characters':''; const e=l.querySelector('.error'); return n.replace(/\\s+/g,' ').trim()+' = '+(v===''?'(empty)':v)+(f.required?' (required)':'')+(e?' (invalid: '+e.textContent.trim()+')':''); }).filter(Boolean).join('; '); })()"
+   ],
+   "virtual_controls_js": "(() => { const d=document.querySelector('dialog[open][aria-label^=\"Edit PRJ-\"]'); if(!d) return []; const i=d.querySelector('input[type=date]'); if(!i) return []; return [{id:'edit-project-next-gate', label:'Next gate', row_label:'Next gate', region:'Edit project dialog', what:'The date of the project\\'s next stage-gate review. It is shown in the project header and the register\\'s Next gate column. Write a date as YYYY-MM-DD.', not_for:'Recording a stage-gate decision (the Stage-gate decision button on the project). Kept by the dialog\\'s Save.', current_value:i.value, set:\"(v) => { const i=document.querySelector('dialog[open] input[type=date]'); if(!i) return false; let s=String(v||'').trim(); if(!/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(s)){ const t=new Date(s); if(isNaN(t)) return false; s=t.toISOString().slice(0,10); } Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,s); i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true})); return i.value===s; }\"}]; })()"
+  },
+  {
+   "id": "project-stage-gate-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label^=\"Stage-gate decision · \"]"
+   },
+   "name": "Stage-gate decision dialog",
+   "what": "Records the decision that ends the project's current stage. Exactly one decision is chosen: Advance to the next stage (from the final Stage-gate decision stage, advancing hands the project to the development group and closes it in exploration); Place on hold at the current stage (or Resume, when the project is on hold); or Relinquish, which closes the project, lapses its tenure at the next expiry and makes its records read-only. A reasoning of at least twenty characters is required and is written verbatim to the audit log; the project team is notified.",
+   "not_here": "A formal stage-gate review with a gate pack: raised as a request in Approvals; this dialog records the decision itself. Changing only the next gate date: the Edit dialog.",
+   "facts_js": [
+    "(() => { const d=document.querySelector('dialog[open][aria-label^=\"Stage-gate decision\"]'); if(!d) return null; const sum=d.querySelector('.sum'); const c=[...d.querySelectorAll('input[type=radio]')].find(x=>x.checked); const t=d.querySelector('textarea'); const n=t?t.value.trim().length:0; const err=d.querySelector('.error'); return (sum?sum.textContent.trim()+' ':'')+'Decision selected: '+(c?c.parentElement.textContent.replace(/\\s+/g,' ').trim():'none')+'; reasoning: '+n+' characters'+(n<20?' (Record decision needs at least 20)':' (long enough)')+(err?'; error shown: '+err.textContent.trim():''); })()"
+   ]
+  },
+  {
+   "id": "tenement-renewal-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label=\"Lodge a renewal\"]"
+   },
+   "name": "Lodge a renewal dialog",
+   "what": "Confirms lodging a renewal for one tenement: shows its expiry, the workflow it starts (expenditure check by Finance, then lodgement by Tenure) and the expenditure against the annual commitment, with a warning when spend is below the commitment. Submit for renewal creates the tenement-renewal approval request and marks the tenement 'renewal lodged'.",
+   "not_here": "A confirmation: Submit for renewal is its one action. Approving the renewal steps: the created request in Approvals. Cancel, the close cross or Escape close it and leave the tenement as it was.",
+   "facts_js": [
+    "(() => { const d=document.querySelector('dialog[open][aria-label=\"Lodge a renewal\"]'); if(!d) return null; const parts=[d.querySelector('.sum'), ...d.querySelectorAll('dl dt'), d.querySelector('.notice')].filter(Boolean).map(e=>e.tagName==='DT'?e.textContent.trim()+': '+(e.nextElementSibling?e.nextElementSibling.textContent.trim():''):e.textContent.trim()); return 'Renewal: '+parts.join(' · '); })()"
+   ]
+  }
+ ],
+ "controls": [
+  {
+   "key": {
+    "row_label": "Projects",
+    "role": "link",
+    "text_regex": "^All active \\d+$"
+   },
+   "region": "Projects left panel (section navigation)",
+   "what": "Shows the register of active projects (everything not closed, including on hold), with no other cut. The number is how many there are.",
+   "not_for": "Closed projects (that is Closed) or only on-hold projects (that is On hold).",
+   "note": "Count in the label varies, hence the regex."
+  },
+  {
+   "key": {
+    "row_label": "Projects",
+    "role": "link",
+    "text_regex": "^On hold \\d+$"
+   },
+   "region": "Projects left panel (section navigation)",
+   "what": "Cuts the register to projects whose status is on hold. The number is how many there are.",
+   "not_for": "Placing a project on hold (that is the Stage-gate decision on the project record)."
+  },
+  {
+   "key": {
+    "row_label": "Projects",
+    "role": "link",
+    "text_regex": "^Closed \\d+$"
+   },
+   "region": "Projects left panel (section navigation)",
+   "what": "Cuts the register to closed projects (advanced to development or relinquished). The number is how many there are.",
+   "not_for": "Closing a project (that is a Stage-gate decision)."
+  },
+  {
+   "key": {
+    "row_label": "By commodity",
+    "role": "link",
+    "text_regex": "^\\S.* \\d+$"
+   },
+   "region": "Projects left panel (section navigation)",
+   "what": "Cuts the register to active projects of the commodity named on the link; the number is how many there are.",
+   "not_for": "Portfolio totals by commodity (Portfolio). Each link replaces the current cut, including a stage cut.",
+   "note": "Generic: shared by every commodity link in the group."
+  },
+  {
+   "key": {
+    "row_label": "By stage",
+    "role": "link",
+    "text_regex": "^\\S.* \\d+$"
+   },
+   "region": "Projects left panel (section navigation)",
+   "what": "Cuts the register to active projects at the pipeline stage named on the link; the number is how many there are.",
+   "not_for": "Moving a project to another stage (the Stage-gate decision button on the project record). The 'Stage-gate decision' link here filters to that stage.",
+   "note": "Generic: shared by every stage link in the group."
+  },
+  {
+   "key": {
+    "page": "projects-register",
+    "role": "link",
+    "text": "New project"
+   },
+   "region": "Register header, right",
+   "what": "Opens the New project form to create a project.",
+   "not_for": "Creating a programme for an existing project (that is New programme on the project's Programmes tab)."
+  },
+  {
+   "key": {
+    "page": "projects-register",
+    "text": "Find"
+   },
+   "region": "Register filter bar",
+   "what": "Type-to-filter box: narrows the rows shown to projects whose id, name or jurisdiction contains the text, as you type. It keeps the current left-panel cut.",
+   "not_for": "Searching the whole tenant (the top-bar search box). Commodity and stage cuts: the left panel."
+  },
+  {
+   "key": {
+    "page": "projects-register",
+    "role": "link",
+    "text": "Clear cut"
+   },
+   "region": "Register filter bar",
+   "what": "Removes the left-panel cut (status, commodity or stage) and shows all active projects again.",
+   "not_for": "Clearing the Find box text."
+  },
+  {
+   "key": {
+    "page": "projects-register",
+    "text_regex": "^Sort by "
+   },
+   "region": "Register table header",
+   "what": "Sorts the register by the column named in the label; pressing again reverses the order.",
+   "not_for": "Filtering rows (that is Find or the left panel).",
+   "note": "Generic: every column header button."
+  },
+  {
+   "key": {
+    "page": "projects-register",
+    "role": "link",
+    "text_regex": "^PRJ-\\d+$"
+   },
+   "region": "Register table, Project column",
+   "what": "Opens that project's record (Overview tab).",
+   "not_for": "Editing the project directly; the record's Edit button does that.",
+   "note": "Keyed on the project-id format, not on a record."
+  },
+  {
+   "key": {
+    "page": "projects-register",
+    "role": "link",
+    "text_regex": "^(?!(?:Portfolio|Projects|Programmes|Drilling|Assays|Resources?|Approvals|Optimiser|Admin|Overview|Tenure|Budget|Activity|New project|New programme|Clear cut|Cancel|ADIT home)(?:\\s+\\d+)?$)(?!Approvals\\s*\\()(?!User Manual)(?!open in )(?!all\\s+\\d+$)(?!Tenement\\s.+expires)(?!Batch\\s+\\S+$)(?![A-Z]{2,}(?:-[A-Z0-9]+)+$)\\S"
+   },
+   "region": "Register table, Name column",
+   "what": "A project's name: opens that project's record (Overview tab), the same as its id link.",
+   "not_for": "Filtering by name (that is the Find box).",
+   "note": "Generic catch-all for record-name links; the regex excludes header/nav names, tabs, fixed links and id-shaped codes, which have their own entries."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Saving the form; leaving this way discards what was typed."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "text_regex": "^(Open )?Project name"
+   },
+   "region": "New project form",
+   "what": "The project's name. Required.",
+   "not_for": "The project id, which is assigned automatically by the auto-numbering rule."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "text": "Commodity"
+   },
+   "region": "New project form",
+   "what": "The one commodity the project explores for, chosen from the list. Fixed at creation; later changes go through support.",
+   "not_for": "The deposit style, which follows from the commodity.",
+   "options": [
+    "Gold",
+    "Lithium",
+    "Potash",
+    "Copper",
+    "Nickel"
+   ]
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "text_regex": "^(Open )?Jurisdiction"
+   },
+   "region": "New project form",
+   "what": "The state, province or region the property is in, typed as free text. Required. Fixed at creation; later changes go through support.",
+   "not_for": "The country, which is the separate Country list."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "text": "Country"
+   },
+   "region": "New project form",
+   "what": "The country the property is in, chosen from the list.",
+   "not_for": "The state or province (that is Jurisdiction).",
+   "options": [
+    "Canada",
+    "United States",
+    "Australia",
+    "Chile",
+    "Finland",
+    "Argentina"
+   ]
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "text_regex": "^(Open )?Area"
+   },
+   "region": "New project form",
+   "what": "Area of the property in square kilometres. Required, more than zero.",
+   "not_for": "The budget."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "text_regex": "^(Open )?Budget"
+   },
+   "region": "New project form",
+   "what": "The project's budget for the current fiscal year, in the tenant's base currency. Required; 0 means none. Fixed at creation; later changes go through support.",
+   "not_for": "The year-end forecast, which starts equal to the budget and is changed later with Edit."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "text": "Project geologist"
+   },
+   "region": "New project form",
+   "what": "The project geologist responsible for the project, chosen from active users in the Project Geologist role.",
+   "not_for": "The exploration manager, who is assigned automatically."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "text_regex": "^(Open )?Description"
+   },
+   "region": "New project form",
+   "what": "Free-text description: deposit style, what is known, what the first programme will test. Optional.",
+   "not_for": "Comments, which are posted on the record after creation."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "role": "link",
+    "text": "Cancel"
+   },
+   "region": "New project form, bottom right",
+   "what": "Leaves the form, discarding what was typed, and opens the Projects register.",
+   "not_for": "Clearing the fields while staying on the form."
+  },
+  {
+   "key": {
+    "page": "projects-new",
+    "role": "button",
+    "text": "Create project"
+   },
+   "region": "New project form, bottom right",
+   "what": "Validates the form and creates the project, then opens its record. It refuses and marks the fields while a required field is empty or invalid (name, jurisdiction, area above zero, budget); the form stays open.",
+   "not_for": "Submitting for approval; a new project is created directly."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text": "Projects"
+   },
+   "region": "Breadcrumb above the project title (the top navigation has a link with the same name)",
+   "what": "Opens the Projects register.",
+   "not_for": "Going to another tab of this project (those are the tab strip links).",
+   "note": "Indistinguishable from the top-navigation Projects link by any key field; the description is true of both."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "button",
+    "text_regex": "^(Watch|Watching)$"
+   },
+   "region": "Project header, right",
+   "what": "Toggles whether you watch this project (notifications about it). 'Watching' means you already do; pressing it stops watching.",
+   "not_for": "Following another record (each record has its own Watch). Watching leaves the project's data as it is."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Project header, right",
+   "what": "Opens the Edit dialog for the project's name, project geologist, next gate date, year-end forecast and description. Shown to users with the project write permission, on open projects.",
+   "not_for": "Changing budget, commodity or jurisdiction (set at creation; later changes go through support), or changing stage (Stage-gate decision)."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "button",
+    "text": "Stage-gate decision"
+   },
+   "region": "Project header, right (primary button)",
+   "what": "Opens the Stage-gate decision dialog to advance, hold, resume or relinquish the project. Shown only to users with the gate decision permission (Exploration Manager by default).",
+   "not_for": "Raising a stage-gate review request for approval (Approvals), or the left panel's 'Stage-gate decision' stage filter."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Overview tab of this project: the project's summary, open items and comments.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text_regex": "^Tenure \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Tenure tab of this project: the project's tenements and Lodge renewal. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text_regex": "^Programmes \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Programmes tab of this project: the project's programmes. The number is how many records the tab lists.",
+   "not_for": "The Programmes section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text_regex": "^Drilling \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Drilling tab of this project: the project's drillholes. The number is how many records the tab lists.",
+   "not_for": "The Drilling section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text_regex": "^Assays \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Assays tab of this project: the project's sample batches. The number is how many records the tab lists.",
+   "not_for": "The Assays section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text_regex": "^Resource \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Resource tab of this project: the project's resource estimates. The number is how many records the tab lists.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text": "Budget"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Budget tab of this project: the project ledger and spend against plan.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text_regex": "^Approvals \\d+$"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Approvals tab of this project: every approval request raised on the project. The number is how many records the tab lists.",
+   "not_for": "The Approvals section of the top navigation, which covers all projects."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "link",
+    "text": "Activity"
+   },
+   "region": "Project tab strip",
+   "what": "Opens the Activity tab of this project: the project's audit trail.",
+   "not_for": "Any other project; the tabs always stay on the project in view."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "text_regex": "^(Open )?Add a comment"
+   },
+   "region": "Comments panel, foot of the Overview",
+   "what": "Text of a new comment on this project. Typing @ followed by a colleague's first name notifies them; the project manager and geologist are notified of every comment.",
+   "not_for": "Reasoning for a stage-gate decision (that is in the Stage-gate decision dialog) or the project description (that is Edit). Text typed here is saved by Post comment."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "button",
+    "text": "Post comment"
+   },
+   "region": "Comments panel, foot of the Overview",
+   "what": "Posts the comment typed in the box to the project and clears the box. It is only enabled when the box has text.",
+   "not_for": "Saving project fields (that is the Edit dialog's Save)."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^all\\s+\\d+$"
+   },
+   "region": "Overview, Programmes panel heading",
+   "what": "Opens the Programmes tab listing all of the project's programmes.",
+   "not_for": "Creating a programme."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^Tenement .+ expires"
+   },
+   "region": "Overview, Open items panel",
+   "what": "An expiring or renewal-lodged tenement: opens this project's Tenure tab.",
+   "not_for": "Lodging the renewal itself (that is Lodge renewal on the Tenure tab)."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^Batch\\s+\\S+$"
+   },
+   "region": "Overview, Open items panel",
+   "what": "A sample batch on QAQC hold: opens the batch in the Assays section.",
+   "not_for": "Releasing the hold (the batch's page in Assays)."
+  },
+  {
+   "key": {
+    "page": "project-overview",
+    "role": "link",
+    "text_regex": "^(?!(?:Portfolio|Projects|Programmes|Drilling|Assays|Resources?|Approvals|Optimiser|Admin|Overview|Tenure|Budget|Activity|New project|New programme|Clear cut|Cancel|ADIT home)(?:\\s+\\d+)?$)(?!Approvals\\s*\\()(?!User Manual)(?!open in )(?!all\\s+\\d+$)(?!Tenement\\s.+expires)(?!Batch\\s+\\S+$)(?![A-Z]{2,}(?:-[A-Z0-9]+)+$)\\S"
+   },
+   "region": "Overview, Programmes or Open items panel",
+   "what": "A record named in the panel: a programme name opens that programme's page; a pending approval title opens the request in Approvals.",
+   "not_for": "Approving; decisions are made on the request page.",
+   "note": "Generic catch-all for record-name links on this page."
+  },
+  {
+   "key": {
+    "role": "button",
+    "text_regex": "^(read from|computed by) "
+   },
+   "region": "Under a row of summary figures",
+   "what": "Provenance line: says which records the figures above were read or computed from. Where it ends in 'show method' it expands the method, author, reviewer and notes; otherwise it is a label.",
+   "not_for": "Opening the records it counts (the tabs and tables open them).",
+   "note": "Shared component (appears in other areas too); description is generic."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "role": "button",
+    "text": "Lodge renewal"
+   },
+   "region": "Tenements table, Actions column (one per current or expiring tenement)",
+   "what": "Opens the Lodge a renewal dialog for the tenement on this row (its id is the row label), to start the tenement-renewal workflow. Shown only to users with the tenure write permission.",
+   "not_for": "Deciding a renewal already lodged (its request in Approvals). A tenement with status 'renewal lodged' is already in the workflow.",
+   "note": "One button per row; the tenement id is the row_label, never a key."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text": "New programme"
+   },
+   "region": "Programmes tab, table heading, right",
+   "what": "Opens the new-programme form in the Programmes section with this project already selected. Shown only to users with the programme write permission.",
+   "not_for": "Creating a project (that is New project in the register)."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text": "open in Drilling"
+   },
+   "region": "Drilling tab, table heading, right",
+   "what": "Opens the Drilling section filtered to this project's holes.",
+   "not_for": "Opening one hole (its id link in the table)."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text": "open in Assays"
+   },
+   "region": "Assays tab, table heading, right",
+   "what": "Opens the Assays section filtered to this project's batches.",
+   "not_for": "Opening one batch (its id link in the table)."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text": "open in Resources"
+   },
+   "region": "Resource tab, Estimates heading, right",
+   "what": "Opens the Resources estimates list filtered to this project.",
+   "not_for": "Opening one estimate (its id link in the table)."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "button",
+    "text": "Values behind this chart"
+   },
+   "region": "Budget tab, under each chart",
+   "what": "Expands the table of numbers the chart above it is drawn from.",
+   "not_for": "Editing budget values (forecast: Edit in the project header; approved budget: set at creation).",
+   "note": "One per chart (spend by month; budget by type)."
+  },
+  {
+   "key": {
+    "page": "project-tenure",
+    "text_regex": "^Sort by "
+   },
+   "region": "Tenements table header",
+   "what": "Sorts the table by the column named in the label; pressing again reverses the order.",
+   "not_for": "Filtering rows; the table lists all of this project's records of its kind.",
+   "note": "Generic: every column header button."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "text_regex": "^Sort by "
+   },
+   "region": "Programmes table header",
+   "what": "Sorts the table by the column named in the label; pressing again reverses the order.",
+   "not_for": "Filtering rows; the table lists all of this project's records of its kind.",
+   "note": "Generic: every column header button."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "button",
+    "text_regex": "^(First|Previous|Next|Last)$"
+   },
+   "region": "Programmes table footer pager",
+   "what": "Moves between pages of the table (50 rows per page): First, Previous, Next or Last page. The footer says which rows are showing.",
+   "not_for": "Moving between records or tabs.",
+   "note": "Appears only when the table has more than 50 rows."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text_regex": "^PRG-\\d+-\\d+$"
+   },
+   "region": "Programmes table",
+   "what": "Opens this programme's page.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Keyed on the id format, not on a record."
+  },
+  {
+   "key": {
+    "page": "project-programmes",
+    "role": "link",
+    "text_regex": "^(?!(?:Portfolio|Projects|Programmes|Drilling|Assays|Resources?|Approvals|Optimiser|Admin|Overview|Tenure|Budget|Activity|New project|New programme|Clear cut|Cancel|ADIT home)(?:\\s+\\d+)?$)(?!Approvals\\s*\\()(?!User Manual)(?!open in )(?!all\\s+\\d+$)(?!Tenement\\s.+expires)(?!Batch\\s+\\S+$)(?![A-Z]{2,}(?:-[A-Z0-9]+)+$)\\S"
+   },
+   "region": "Programmes table",
+   "what": "Opens the named record: a programme or request, or (Project column) the project's Overview.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Generic catch-all for record-name links on this page."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "text_regex": "^Sort by "
+   },
+   "region": "Drillholes table header",
+   "what": "Sorts the table by the column named in the label; pressing again reverses the order.",
+   "not_for": "Filtering rows; the table lists all of this project's records of its kind.",
+   "note": "Generic: every column header button."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "button",
+    "text_regex": "^(First|Previous|Next|Last)$"
+   },
+   "region": "Drillholes table footer pager",
+   "what": "Moves between pages of the table (50 rows per page): First, Previous, Next or Last page. The footer says which rows are showing.",
+   "not_for": "Moving between records or tabs.",
+   "note": "Appears only when the table has more than 50 rows."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^PRG-\\d+-\\d+$"
+   },
+   "region": "Drillholes table",
+   "what": "Opens the programme that drilled this hole.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Keyed on the id format, not on a record."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^[A-Z]{2,}(?:-[A-Z0-9]+)*-\\d+$"
+   },
+   "region": "Drillholes table",
+   "what": "Opens this drillhole's page.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Keyed on the id format, not on a record."
+  },
+  {
+   "key": {
+    "page": "project-drilling",
+    "role": "link",
+    "text_regex": "^(?!(?:Portfolio|Projects|Programmes|Drilling|Assays|Resources?|Approvals|Optimiser|Admin|Overview|Tenure|Budget|Activity|New project|New programme|Clear cut|Cancel|ADIT home)(?:\\s+\\d+)?$)(?!Approvals\\s*\\()(?!User Manual)(?!open in )(?!all\\s+\\d+$)(?!Tenement\\s.+expires)(?!Batch\\s+\\S+$)(?![A-Z]{2,}(?:-[A-Z0-9]+)+$)\\S"
+   },
+   "region": "Drillholes table",
+   "what": "Opens the named record: a programme or request, or (Project column) the project's Overview.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Generic catch-all for record-name links on this page."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "text_regex": "^Sort by "
+   },
+   "region": "Sample batches table header",
+   "what": "Sorts the table by the column named in the label; pressing again reverses the order.",
+   "not_for": "Filtering rows; the table lists all of this project's records of its kind.",
+   "note": "Generic: every column header button."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "button",
+    "text_regex": "^(First|Previous|Next|Last)$"
+   },
+   "region": "Sample batches table footer pager",
+   "what": "Moves between pages of the table (50 rows per page): First, Previous, Next or Last page. The footer says which rows are showing.",
+   "not_for": "Moving between records or tabs.",
+   "note": "Appears only when the table has more than 50 rows."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text_regex": "^LAB-\\d+-\\d+$"
+   },
+   "region": "Sample batches table",
+   "what": "Opens this sample batch's page.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Keyed on the id format, not on a record."
+  },
+  {
+   "key": {
+    "page": "project-assays",
+    "role": "link",
+    "text_regex": "^(?!(?:Portfolio|Projects|Programmes|Drilling|Assays|Resources?|Approvals|Optimiser|Admin|Overview|Tenure|Budget|Activity|New project|New programme|Clear cut|Cancel|ADIT home)(?:\\s+\\d+)?$)(?!Approvals\\s*\\()(?!User Manual)(?!open in )(?!all\\s+\\d+$)(?!Tenement\\s.+expires)(?!Batch\\s+\\S+$)(?![A-Z]{2,}(?:-[A-Z0-9]+)+$)\\S"
+   },
+   "region": "Sample batches table",
+   "what": "Opens the named record: a programme or request, or (Project column) the project's Overview.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Generic catch-all for record-name links on this page."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "text_regex": "^Sort by "
+   },
+   "region": "Programme ledgers table header",
+   "what": "Sorts the table by the column named in the label; pressing again reverses the order.",
+   "not_for": "Filtering rows; the table lists all of this project's records of its kind.",
+   "note": "Generic: every column header button."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "button",
+    "text_regex": "^(First|Previous|Next|Last)$"
+   },
+   "region": "Programme ledgers table footer pager",
+   "what": "Moves between pages of the table (50 rows per page): First, Previous, Next or Last page. The footer says which rows are showing.",
+   "not_for": "Moving between records or tabs.",
+   "note": "Appears only when the table has more than 50 rows."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text_regex": "^PRG-\\d+-\\d+$"
+   },
+   "region": "Programme ledgers table",
+   "what": "Opens this programme's page.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Keyed on the id format, not on a record."
+  },
+  {
+   "key": {
+    "page": "project-budget",
+    "role": "link",
+    "text_regex": "^(?!(?:Portfolio|Projects|Programmes|Drilling|Assays|Resources?|Approvals|Optimiser|Admin|Overview|Tenure|Budget|Activity|New project|New programme|Clear cut|Cancel|ADIT home)(?:\\s+\\d+)?$)(?!Approvals\\s*\\()(?!User Manual)(?!open in )(?!all\\s+\\d+$)(?!Tenement\\s.+expires)(?!Batch\\s+\\S+$)(?![A-Z]{2,}(?:-[A-Z0-9]+)+$)\\S"
+   },
+   "region": "Programme ledgers table",
+   "what": "Opens the named record: a programme or request, or (Project column) the project's Overview.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Generic catch-all for record-name links on this page."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "text_regex": "^Sort by "
+   },
+   "region": "Approvals table header",
+   "what": "Sorts the table by the column named in the label; pressing again reverses the order.",
+   "not_for": "Filtering rows; the table lists all of this project's records of its kind.",
+   "note": "Generic: every column header button."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "button",
+    "text_regex": "^(First|Previous|Next|Last)$"
+   },
+   "region": "Approvals table footer pager",
+   "what": "Moves between pages of the table (50 rows per page): First, Previous, Next or Last page. The footer says which rows are showing.",
+   "not_for": "Moving between records or tabs.",
+   "note": "Appears only when the table has more than 50 rows."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text_regex": "^WF-\\d+-\\d+$"
+   },
+   "region": "Approvals table",
+   "what": "Opens this approval request's page.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Keyed on the id format, not on a record."
+  },
+  {
+   "key": {
+    "page": "project-approvals",
+    "role": "link",
+    "text_regex": "^(?!(?:Portfolio|Projects|Programmes|Drilling|Assays|Resources?|Approvals|Optimiser|Admin|Overview|Tenure|Budget|Activity|New project|New programme|Clear cut|Cancel|ADIT home)(?:\\s+\\d+)?$)(?!Approvals\\s*\\()(?!User Manual)(?!open in )(?!all\\s+\\d+$)(?!Tenement\\s.+expires)(?!Batch\\s+\\S+$)(?![A-Z]{2,}(?:-[A-Z0-9]+)+$)\\S"
+   },
+   "region": "Approvals table",
+   "what": "Opens the named record: a programme or request, or (Project column) the project's Overview.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Generic catch-all for record-name links on this page."
+  },
+  {
+   "key": {
+    "page": "project-activity",
+    "role": "button",
+    "text_regex": "^(First|Previous|Next|Last)$"
+   },
+   "region": "Activity table footer pager",
+   "what": "Moves between pages of the table (50 rows per page): First, Previous, Next or Last page. The footer says which rows are showing.",
+   "not_for": "Moving between records or tabs.",
+   "note": "Appears only when the table has more than 50 rows."
+  },
+  {
+   "key": {
+    "page": "project-resource",
+    "role": "link",
+    "text_regex": "^RES-\\d+-\\d+$"
+   },
+   "region": "Estimates table",
+   "what": "Opens this estimate's page.",
+   "not_for": "Changing the record (its own page, which this link opens).",
+   "note": "Keyed on the id format, not on a record."
+  },
+  {
+   "key": {
+    "page": "project-edit-dialog",
+    "text": "Close dialog"
+   },
+   "region": "Edit project dialog, top right cross",
+   "what": "Closes the dialog without saving.",
+   "not_for": "Saving (that is Save)."
+  },
+  {
+   "key": {
+    "page": "project-edit-dialog",
+    "text_regex": "^(Open )?Name$"
+   },
+   "region": "Edit project dialog",
+   "what": "The project's name. Required; an empty name is not saved.",
+   "not_for": "The project id, fixed by auto-numbering."
+  },
+  {
+   "key": {
+    "page": "project-edit-dialog",
+    "text": "Project geologist"
+   },
+   "region": "Edit project dialog",
+   "what": "Reassigns the project geologist. The active geologists are selectable; inactive ones are listed for reference.",
+   "not_for": "The exploration manager, assigned automatically."
+  },
+  {
+   "key": {
+    "page": "project-edit-dialog",
+    "text_regex": "^(Open )?Forecast at year end"
+   },
+   "region": "Edit project dialog",
+   "what": "The project manager's forecast of spend at fiscal year end, in the base currency.",
+   "not_for": "The approved budget, set at creation; later changes go through support."
+  },
+  {
+   "key": {
+    "page": "project-edit-dialog",
+    "text_regex": "^(Open )?Description$"
+   },
+   "region": "Edit project dialog",
+   "what": "The project's free-text description.",
+   "not_for": "Posting a comment."
+  },
+  {
+   "key": {
+    "page": "project-edit-dialog",
+    "role": "button",
+    "text": "Cancel"
+   },
+   "region": "Edit project dialog, bottom right",
+   "what": "Closes the dialog and discards the changes.",
+   "not_for": "Saving."
+  },
+  {
+   "key": {
+    "page": "project-edit-dialog",
+    "role": "button",
+    "text": "Save"
+   },
+   "region": "Edit project dialog, bottom right",
+   "what": "Saves the changes to the project and closes the dialog ('Project saved').",
+   "not_for": "Recording a stage-gate decision or submitting anything for approval."
+  },
+  {
+   "key": {
+    "page": "project-stage-gate-dialog",
+    "text": "Close dialog"
+   },
+   "region": "Stage-gate decision dialog, top right cross",
+   "what": "Closes the dialog without recording anything.",
+   "not_for": "Recording the decision."
+  },
+  {
+   "key": {
+    "page": "project-stage-gate-dialog",
+    "role": "radio",
+    "text_regex": "^Advance to "
+   },
+   "region": "Stage-gate decision dialog, Decision choices",
+   "what": "Choose to advance the project to the next pipeline stage named in the label. From the final stage the label says it hands over to the development group, which closes the project in exploration.",
+   "not_for": "Holding or relinquishing. Record decision records the choice."
+  },
+  {
+   "key": {
+    "page": "project-stage-gate-dialog",
+    "role": "radio",
+    "text_regex": "^Place on hold at\\s"
+   },
+   "region": "Stage-gate decision dialog, Decision choices",
+   "what": "Choose to place the project on hold at its current stage.",
+   "not_for": "Closing the project (that is Relinquish). Offered while the project is active."
+  },
+  {
+   "key": {
+    "page": "project-stage-gate-dialog",
+    "role": "radio",
+    "text_regex": "^Resume the project at\\s"
+   },
+   "region": "Stage-gate decision dialog, Decision choices",
+   "what": "Choose to resume a project that is on hold, at its current stage.",
+   "not_for": "Advancing it. Offered only while the project is on hold."
+  },
+  {
+   "key": {
+    "page": "project-stage-gate-dialog",
+    "role": "radio",
+    "text_regex": "^Relinquish and close"
+   },
+   "region": "Stage-gate decision dialog, Decision choices",
+   "what": "Choose to relinquish: closes the project, lapses its tenements at the next expiry and makes its records read-only. Permanent in the application; the confirm button turns red.",
+   "not_for": "Putting the project on hold (that is Place on hold)."
+  },
+  {
+   "key": {
+    "page": "project-stage-gate-dialog",
+    "text_regex": "^(Open )?Reasoning"
+   },
+   "region": "Stage-gate decision dialog",
+   "what": "The reasoning for the decision: what the results showed and why. At least twenty characters; written to the audit log verbatim.",
+   "not_for": "A comment on the project. Record decision needs at least twenty characters here."
+  },
+  {
+   "key": {
+    "page": "project-stage-gate-dialog",
+    "role": "button",
+    "text": "Cancel"
+   },
+   "region": "Stage-gate decision dialog, bottom right",
+   "what": "Closes the dialog without recording a decision.",
+   "not_for": "Recording the decision."
+  },
+  {
+   "key": {
+    "page": "project-stage-gate-dialog",
+    "role": "button",
+    "text": "Record decision"
+   },
+   "region": "Stage-gate decision dialog, bottom right",
+   "what": "Records the chosen decision with the reasoning, notifies the project team and closes the dialog.",
+   "not_for": "Requesting approval (Approvals). With reasoning under twenty characters it shows an error and the dialog stays open."
+  },
+  {
+   "key": {
+    "page": "tenement-renewal-dialog",
+    "text": "Close dialog"
+   },
+   "region": "Lodge a renewal dialog, top right cross",
+   "what": "Closes the dialog without lodging.",
+   "not_for": "Lodging the renewal."
+  },
+  {
+   "key": {
+    "page": "tenement-renewal-dialog",
+    "role": "button",
+    "text": "Cancel"
+   },
+   "region": "Lodge a renewal dialog, bottom right",
+   "what": "Closes the dialog without lodging.",
+   "not_for": "Lodging the renewal."
+  },
+  {
+   "key": {
+    "page": "tenement-renewal-dialog",
+    "role": "button",
+    "text": "Submit for renewal"
+   },
+   "region": "Lodge a renewal dialog, bottom right",
+   "what": "Lodges the renewal: creates the tenement-renewal approval request (Finance expenditure check, then Tenure lodgement) and marks the tenement 'renewal lodged'.",
+   "not_for": "Approving the renewal; that happens step by step on the request in Approvals."
+  }
+ ]
+}

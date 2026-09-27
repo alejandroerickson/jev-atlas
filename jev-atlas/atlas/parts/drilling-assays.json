@@ -1,0 +1,1424 @@
+{
+ "app": "ADIT",
+ "version": "2026-09-22",
+ "area": "drilling-assays",
+ "selectors": {
+  "dialog": [
+   "dialog[open]"
+  ]
+ },
+ "pages": [
+  {
+   "id": "drilling-intercepts",
+   "match": {
+    "url_regex": "#/drilling/intercepts(\\?|$)"
+   },
+   "name": "Intercepts",
+   "what": "Tenant-wide list of intercepts: runs of assayed samples above the commodity's cut-off, sorted by grade × length, with a scatter of length against grade over cut-off. By default only significant intercepts show (at least 1.5× cut-off over the commodity's minimum length); unticking Significant only shows every run above cut-off. Intercepts are computed from accepted assay batches and shown read-only.",
+   "not_here": "One hole's intercepts, grade profile and samples: that hole's page (its hole id). The drillhole list is under All holes in the left column. Batch review and QAQC are under Assays.",
+   "leads_to": {
+    "Hole id link": "drilling-hole",
+    "All holes (left column)": "drilling-list",
+    "Project link": "project page (Projects area)"
+   },
+   "facts_js": [
+    "(() => { const h = document.querySelector('main h1'); if (!h) return null; const m = [...document.querySelectorAll('main .head .meta > *')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).filter(Boolean); return 'Heading: ' + h.textContent.trim() + (m.length ? ' (' + m.join(' · ') + ')' : ''); })()",
+    "(() => { const f = document.querySelector('main .filters'); if (!f) return null; const parts = [...f.querySelectorAll('label.field')].map(l => { const n = l.querySelector('span')?.textContent.trim(); const c = l.querySelector('input,select'); if (!n || !c) return null; const v = c.tagName === 'SELECT' ? c.selectedOptions[0]?.textContent.trim() : (c.value ? '\"' + c.value + '\"' : 'empty'); return n + ' = ' + v; }).filter(Boolean); const cb = f.querySelector('input[type=checkbox]'); if (cb) parts.push('Significant only = ' + (cb.checked ? 'ticked' : 'not ticked')); const clear = [...f.querySelectorAll('a')].some(a => a.textContent.trim() === 'Clear'); return 'Filters: ' + parts.join('; ') + (clear ? ' (a filter is applied; Clear removes it)' : ''); })()",
+    "(() => { const out = [...document.querySelectorAll('main .tbl-foot')].map(t => { const s = t.querySelector(':scope > span')?.textContent.trim(); const p = t.querySelector('[aria-current=page]')?.textContent.trim(); return s ? s + (p ? ', page ' + p : '') : null; }).filter(Boolean); return out.length ? 'Table rows: ' + out.join(' | ') : null; })()",
+    "(() => { const t = [...document.querySelectorAll('.toast')].filter(e => e.checkVisibility()).map(e => e.innerText.replace(/\\s+/g, ' ').replace(/ Open$/, '').trim()); return t.length ? 'Confirmation shown: ' + t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "drilling-hole",
+   "match": {
+    "url_regex": "#/drilling/(?!intercepts(\\?|$))[^/?]+"
+   },
+   "name": "Drillhole record",
+   "what": "One drillhole: depth against plan, collar coordinates and RL, azimuth and dip, sample counts, best intercept, rig, logger, start and completion dates and the batches its samples went in. The downhole grade profile draws every assayed interval against the cut-off; the Intercepts table lists runs above cut-off; the Samples table lists every interval with grade, batch and QAQC flag. Users with hole.write see Update hole, which changes status, depth and completion date. Comments can be posted on the hole.",
+   "not_here": "Batch acceptance, holds, rejection and result import: the batch's page in Assays. Hole planning and rig scheduling live under Programmes. Other holes are in the drillhole list (Drilling breadcrumb or All holes).",
+   "leads_to": {
+    "Update hole": "update-hole-dialog",
+    "Project link under the heading": "project page (Projects area)",
+    "Programme link under the heading": "programme page (Programmes area)",
+    "batch chip / Batch column link": "assays-batch",
+    "Drilling breadcrumb / All holes": "drilling-list"
+   },
+   "facts_js": [
+    "(() => { const h = document.querySelector('main h1'); if (!h) return null; const m = [...document.querySelectorAll('main .head .meta > *')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).filter(Boolean); return 'Heading: ' + h.textContent.trim() + (m.length ? ' (' + m.join(' · ') + ')' : ''); })()",
+    "(() => { const want = ['Update hole', 'Import results', 'Accept batch', 'Place on hold', 'Reject']; const hd = document.querySelector('main .head'); if (!hd) return null; const b = [...document.querySelectorAll('main button')].filter(x => !x.closest('dialog') && want.includes(x.textContent.trim()) && x.checkVisibility()).map(x => x.textContent.trim()); return 'Record actions: ' + (b.length ? 'offered to the signed-in user: ' + b.join(', ') : 'shown according to the signed-in role and the record status; to act with another role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)'); })()",
+    "(() => { const out = [...document.querySelectorAll('main .tbl-foot')].map(t => { const s = t.querySelector(':scope > span')?.textContent.trim(); const p = t.querySelector('[aria-current=page]')?.textContent.trim(); return s ? s + (p ? ', page ' + p : '') : null; }).filter(Boolean); return out.length ? 'Table rows: ' + out.join(' | ') : null; })()",
+    "(() => { const t = [...document.querySelectorAll('.toast')].filter(e => e.checkVisibility()).map(e => e.innerText.replace(/\\s+/g, ' ').replace(/ Open$/, '').trim()); return t.length ? 'Confirmation shown: ' + t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "drilling-list",
+   "match": {
+    "url_regex": "#/drilling/?(\\?|$)"
+   },
+   "name": "Drillholes",
+   "what": "Every drillhole in the tenant across projects and programmes, filterable by hole id, project and hole type (DDH diamond, RC reverse circulation, AC aircore, Sonic). The left column cuts the list to holes drilling now, planned, awaiting sampling (logged) or abandoned. Columns give collar coordinates, azimuth, dip, planned and actual depth, best intercept and completion date; the chart shows holes completed by month by commodity. The list is read-only; status and depth change on a hole's own page.",
+   "not_here": "Changing a hole's status, depth or completion date is Update hole on that hole's page. Intercepts across the tenant are under Significant intercepts. Sample batches, dispatch and QAQC are under Assays. Programmes and rigs are under Programmes.",
+   "leads_to": {
+    "Hole id link": "drilling-hole",
+    "Significant intercepts": "drilling-intercepts",
+    "Project link": "project page (Projects area)",
+    "Programme code link": "programme page (Programmes area)"
+   },
+   "facts_js": [
+    "(() => { const h = document.querySelector('main h1'); if (!h) return null; const m = [...document.querySelectorAll('main .head .meta > *')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).filter(Boolean); return 'Heading: ' + h.textContent.trim() + (m.length ? ' (' + m.join(' · ') + ')' : ''); })()",
+    "(() => { const f = document.querySelector('main .filters'); if (!f) return null; const parts = [...f.querySelectorAll('label.field')].map(l => { const n = l.querySelector('span')?.textContent.trim(); const c = l.querySelector('input,select'); if (!n || !c) return null; const v = c.tagName === 'SELECT' ? c.selectedOptions[0]?.textContent.trim() : (c.value ? '\"' + c.value + '\"' : 'empty'); return n + ' = ' + v; }).filter(Boolean); const cb = f.querySelector('input[type=checkbox]'); if (cb) parts.push('Significant only = ' + (cb.checked ? 'ticked' : 'not ticked')); const clear = [...f.querySelectorAll('a')].some(a => a.textContent.trim() === 'Clear'); return 'Filters: ' + parts.join('; ') + (clear ? ' (a filter is applied; Clear removes it)' : ''); })()",
+    "(() => { const out = [...document.querySelectorAll('main .tbl-foot')].map(t => { const s = t.querySelector(':scope > span')?.textContent.trim(); const p = t.querySelector('[aria-current=page]')?.textContent.trim(); return s ? s + (p ? ', page ' + p : '') : null; }).filter(Boolean); return out.length ? 'Table rows: ' + out.join(' | ') : null; })()",
+    "(() => { const t = [...document.querySelectorAll('.toast')].filter(e => e.checkVisibility()).map(e => e.innerText.replace(/\\s+/g, ' ').replace(/ Open$/, '').trim()); return t.length ? 'Confirmation shown: ' + t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "assays-new",
+   "match": {
+    "url_regex": "#/assays/new(\\?|$)"
+   },
+   "name": "New sample dispatch",
+   "what": "Dispatches samples to a laboratory: choose the project and the laboratory (each shown with its quoted turnaround), include one or more of that project's logged holes awaiting dispatch, and submit. Sample numbers are assigned on dispatch and control samples are inserted at the tenant rule (one standard, one blank and one field duplicate per twenty samples); the holes move to sampled and a new batch appears in the batch list. Only holes at status logged appear.",
+   "not_here": "Existing batches, their results and their review: the batch list and each batch's page. Holes join this form once their status is logged, which is set with Update hole on the hole's page. QAQC tolerances: Admin.",
+   "leads_to": {
+    "Cancel": "assays-batches",
+    "Submit dispatch": "stays here; a confirmation names the new batch"
+   },
+   "facts_js": [
+    "(() => { const h = document.querySelector('main h1'); if (!h) return null; const m = [...document.querySelectorAll('main .head .meta > *')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).filter(Boolean); return 'Heading: ' + h.textContent.trim() + (m.length ? ' (' + m.join(' · ') + ')' : ''); })()",
+    "(() => { const m = document.querySelector('main'); if (!m || !/New sample dispatch/.test(m.querySelector('h1')?.textContent || '')) return null; const sel = [...m.querySelectorAll('label.field')].map(l => { const s = l.querySelector('select'); return s ? l.querySelector('span')?.textContent.trim() + ' = ' + s.selectedOptions[0]?.textContent.trim() : null; }).filter(Boolean); const holes = [...m.querySelectorAll('.pills label')].map(l => l.textContent.trim() + (l.querySelector('input')?.checked ? ' [included]' : ' [not included]')); const sub = [...m.querySelectorAll('button')].find(b => b.textContent.trim() === 'Submit dispatch'); return 'Dispatch form: ' + sel.join('; ') + '; logged holes awaiting dispatch: ' + (holes.length ? holes.join(', ') : 'listed once a hole of this project is logged (on the hole page); Project changes the list') + '; Submit dispatch: ' + (!sub ? 'shown to roles with assay rights; to act with one, switch user in the account menu to a person who holds it (People and roles lists who holds each role)' : sub.disabled ? 'disabled: it enables once a hole is included, for a role that dispatches samples' : 'enabled'); })()",
+    "(() => { const t = [...document.querySelectorAll('.toast')].filter(e => e.checkVisibility()).map(e => e.innerText.replace(/\\s+/g, ' ').replace(/ Open$/, '').trim()); return t.length ? 'Confirmation shown: ' + t.join(' | ') : null; })()"
+   ],
+   "virtual_controls_js": "(() => { try { const m = document.querySelector('main'); if (!m) return [];\n return [...m.querySelectorAll('.pills label')].map((l, i) => { const t = l.textContent.trim(); const hole = t.split(' · ')[0];\n return { id: 'dispatch-hole:' + i, label: 'Include hole ' + t + ' in this dispatch', row_label: hole,\n  region: 'New sample dispatch form, logged holes awaiting dispatch',\n  what: 'Whether this logged hole goes in the dispatch. Type yes to include it, no to leave it out. Its samples are numbered and sent to the chosen laboratory when the dispatch is submitted.',\n  not_for: 'Choosing the project or laboratory (the selects above); submitting (Submit dispatch). Holes of other projects: listed once Project names their project.',\n  current_value: l.querySelector('input').checked ? 'yes' : 'no',\n  set: '(v) => { const ls = [...document.querySelectorAll(\"main .pills label\")]; const l = ls.find(x => x.textContent.trim() === ' + JSON.stringify(t) + '); if (!l) return false; const c = l.querySelector(\"input\"); const want = !/^\\\\s*(no|n|false|0|off|exclude|untick|uncheck|remove)\\\\b/i.test(String(v)); if (c.checked !== want) c.click(); return c.checked === want; }' }; }); } catch (e) { return []; } })()"
+  },
+  {
+   "id": "assays-qaqc",
+   "match": {
+    "url_regex": "#/assays/qaqc(\\?|$)"
+   },
+   "name": "QAQC summary",
+   "what": "Quality-control overview for received batches: the tolerances in force, the QAQC pass rate by month, failures by project, a table by laboratory (accreditation, batches received, checks, failures, pass rate, mean turnaround against quoted) and a table by project (checks, failures, pass rate, batches on hold). Read-only.",
+   "not_here": "Reviewing a particular batch's failures (accept, hold, reject) is on that batch's page. Changing the tolerances is Admin → QAQC tolerances (the Tolerances link). Individual samples are in the Sample register.",
+   "leads_to": {
+    "Tolerances": "Admin QAQC tolerances (Admin area)",
+    "Laboratory link": "assays-batches (filtered to that laboratory)",
+    "Project link in By project": "project's assays tab (Projects area)",
+    "Bar in Failures by project": "assays-batches (filtered to that project)"
+   },
+   "facts_js": [
+    "(() => { const h = document.querySelector('main h1'); if (!h) return null; const m = [...document.querySelectorAll('main .head .meta > *')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).filter(Boolean); return 'Heading: ' + h.textContent.trim() + (m.length ? ' (' + m.join(' · ') + ')' : ''); })()",
+    "(() => { const t = [...document.querySelectorAll('.toast')].filter(e => e.checkVisibility()).map(e => e.innerText.replace(/\\s+/g, ' ').replace(/ Open$/, '').trim()); return t.length ? 'Confirmation shown: ' + t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "assays-samples",
+   "match": {
+    "url_regex": "#/assays/samples(\\?|$)"
+   },
+   "name": "Sample register",
+   "what": "Every sample in the tenant: sample number, hole, from and to depth, type (core, chip, standard, blank, duplicate), primary grade, batch and QAQC flag. Narrow by sample, hole or batch id, by project and by type before paging; only the first 5,000 matches are shown. Read-only.",
+   "not_here": "Batch-level review is on the batch page; a hole's own samples and grade profile are on the hole's page. Pass rates and failures by laboratory are in QAQC summary.",
+   "leads_to": {
+    "Hole id link": "drilling-hole",
+    "Batch id link": "assays-batch"
+   },
+   "facts_js": [
+    "(() => { const h = document.querySelector('main h1'); if (!h) return null; const m = [...document.querySelectorAll('main .head .meta > *')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).filter(Boolean); return 'Heading: ' + h.textContent.trim() + (m.length ? ' (' + m.join(' · ') + ')' : ''); })()",
+    "(() => { const f = document.querySelector('main .filters'); if (!f) return null; const parts = [...f.querySelectorAll('label.field')].map(l => { const n = l.querySelector('span')?.textContent.trim(); const c = l.querySelector('input,select'); if (!n || !c) return null; const v = c.tagName === 'SELECT' ? c.selectedOptions[0]?.textContent.trim() : (c.value ? '\"' + c.value + '\"' : 'empty'); return n + ' = ' + v; }).filter(Boolean); const cb = f.querySelector('input[type=checkbox]'); if (cb) parts.push('Significant only = ' + (cb.checked ? 'ticked' : 'not ticked')); const clear = [...f.querySelectorAll('a')].some(a => a.textContent.trim() === 'Clear'); return 'Filters: ' + parts.join('; ') + (clear ? ' (a filter is applied; Clear removes it)' : ''); })()",
+    "(() => { const out = [...document.querySelectorAll('main .tbl-foot')].map(t => { const s = t.querySelector(':scope > span')?.textContent.trim(); const p = t.querySelector('[aria-current=page]')?.textContent.trim(); return s ? s + (p ? ', page ' + p : '') : null; }).filter(Boolean); return out.length ? 'Table rows: ' + out.join(' | ') : null; })()",
+    "(() => { const t = [...document.querySelectorAll('.toast')].filter(e => e.checkVisibility()).map(e => e.innerText.replace(/\\s+/g, ' ').replace(/ Open$/, '').trim()); return t.length ? 'Confirmation shown: ' + t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "assays-batch",
+   "match": {
+    "url_regex": "#/assays/(?!(new|qaqc|samples)(\\?|$))[^/?]+"
+   },
+   "name": "Sample batch",
+   "what": "One laboratory batch: status, laboratory, dispatch reference and method; sample count, QAQC insertions (standards, blanks, duplicates) and insertion rate, failures, share above cut-off, turnaround against the laboratory's quoted days, the holes in it, and dispatch and receipt dates. Lists each QAQC failure (sample, kind of check, measured against expected), primary samples by grade band, comments and every sample. Users with qaqc.review see the actions for the batch's status: Import results while it is at the laboratory; Accept batch, Place on hold and Reject once results are received (a held batch offers Accept batch and Reject).",
+   "not_here": "Dispatching new samples is New dispatch in the batch list. Tolerance settings are under Admin. A hole's intercepts are on the hole's page once the batch is accepted.",
+   "leads_to": {
+    "Import results": "import-results-dialog",
+    "Accept batch": "accept-batch-dialog",
+    "Place on hold": "hold-batch-dialog",
+    "Reject": "reject-batch-dialog",
+    "hole chip / Hole column link": "drilling-hole",
+    "Project link": "project page (Projects area)",
+    "Assays breadcrumb": "assays-batches"
+   },
+   "facts_js": [
+    "(() => { const h = document.querySelector('main h1'); if (!h) return null; const m = [...document.querySelectorAll('main .head .meta > *')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).filter(Boolean); return 'Heading: ' + h.textContent.trim() + (m.length ? ' (' + m.join(' · ') + ')' : ''); })()",
+    "(() => { const want = ['Update hole', 'Import results', 'Accept batch', 'Place on hold', 'Reject']; const hd = document.querySelector('main .head'); if (!hd) return null; const b = [...document.querySelectorAll('main button')].filter(x => !x.closest('dialog') && want.includes(x.textContent.trim()) && x.checkVisibility()).map(x => x.textContent.trim()); return 'Record actions: ' + (b.length ? 'offered to the signed-in user: ' + b.join(', ') : 'shown according to the signed-in role and the record status; to act with another role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)'); })()",
+    "(() => { const s = [...document.querySelectorAll('main section, main .panel')].find(x => /^QAQC failures/.test(x.querySelector('h2')?.textContent.trim() || '')); if (!s) return null; const n = s.querySelector('.ph .r')?.textContent.trim(); return 'QAQC failures listed on this batch: ' + (n || '?'); })()",
+    "(() => { const out = [...document.querySelectorAll('main .tbl-foot')].map(t => { const s = t.querySelector(':scope > span')?.textContent.trim(); const p = t.querySelector('[aria-current=page]')?.textContent.trim(); return s ? s + (p ? ', page ' + p : '') : null; }).filter(Boolean); return out.length ? 'Table rows: ' + out.join(' | ') : null; })()",
+    "(() => { const t = [...document.querySelectorAll('.toast')].filter(e => e.checkVisibility()).map(e => e.innerText.replace(/\\s+/g, ' ').replace(/ Open$/, '').trim()); return t.length ? 'Confirmation shown: ' + t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "assays-batches",
+   "match": {
+    "url_regex": "#/assays/?(\\?|$)"
+   },
+   "name": "Sample batches",
+   "what": "Every batch of samples sent to a laboratory, filterable by project and laboratory; the left column cuts the list to batches at the laboratory, received but unreviewed, on QAQC hold or accepted. Columns give project, laboratory, status, holes, sample count, QAQC insertions, failures, dispatch and receipt dates, turnaround and method. New dispatch starts a dispatch of logged holes. The list is read-only.",
+   "not_here": "Accepting, holding, rejecting or importing results for a batch is on that batch's page. Pass rates by laboratory are in QAQC summary; individual samples in Sample register. Drillholes are under Drilling.",
+   "leads_to": {
+    "Batch id link": "assays-batch",
+    "New dispatch": "assays-new",
+    "QAQC summary": "assays-qaqc",
+    "Sample register": "assays-samples",
+    "Project link": "project page (Projects area)"
+   },
+   "facts_js": [
+    "(() => { const h = document.querySelector('main h1'); if (!h) return null; const m = [...document.querySelectorAll('main .head .meta > *')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).filter(Boolean); return 'Heading: ' + h.textContent.trim() + (m.length ? ' (' + m.join(' · ') + ')' : ''); })()",
+    "(() => { const f = document.querySelector('main .filters'); if (!f) return null; const parts = [...f.querySelectorAll('label.field')].map(l => { const n = l.querySelector('span')?.textContent.trim(); const c = l.querySelector('input,select'); if (!n || !c) return null; const v = c.tagName === 'SELECT' ? c.selectedOptions[0]?.textContent.trim() : (c.value ? '\"' + c.value + '\"' : 'empty'); return n + ' = ' + v; }).filter(Boolean); const cb = f.querySelector('input[type=checkbox]'); if (cb) parts.push('Significant only = ' + (cb.checked ? 'ticked' : 'not ticked')); const clear = [...f.querySelectorAll('a')].some(a => a.textContent.trim() === 'Clear'); return 'Filters: ' + parts.join('; ') + (clear ? ' (a filter is applied; Clear removes it)' : ''); })()",
+    "(() => { const out = [...document.querySelectorAll('main .tbl-foot')].map(t => { const s = t.querySelector(':scope > span')?.textContent.trim(); const p = t.querySelector('[aria-current=page]')?.textContent.trim(); return s ? s + (p ? ', page ' + p : '') : null; }).filter(Boolean); return out.length ? 'Table rows: ' + out.join(' | ') : null; })()",
+    "(() => { const t = [...document.querySelectorAll('.toast')].filter(e => e.checkVisibility()).map(e => e.innerText.replace(/\\s+/g, ' ').replace(/ Open$/, '').trim()); return t.length ? 'Confirmation shown: ' + t.join(' | ') : null; })()"
+   ]
+  },
+  {
+   "id": "update-hole-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open]:has(input[name=\"depth\"]):has(select[name=\"status\"])"
+   },
+   "name": "Update hole dialog",
+   "what": "Changes this hole's status (planned, drilling, completed, abandoned, logged, sampled, assayed), its depth in metres and its completion date. Save writes all three and closes the dialog; Cancel or the cross closes without changing anything.",
+   "not_here": "Collar, orientation, rig and logger: recorded on the hole page, outside this dialog. Moving samples to a laboratory is New dispatch under Assays; assay results change holes to assayed on batch acceptance.",
+   "facts_js": [
+    "(() => { const d = document.querySelector('dialog[open]'); if (!d) return null; const f = [...d.querySelectorAll('label')].map(l => { const c = l.querySelector('input,select,textarea'); if (!c) return null; const n = (l.querySelector('span')?.textContent || l.textContent).replace(/\\s+/g, ' ').trim(); let v; if (c.type === 'checkbox') v = c.checked ? 'ticked' : 'not ticked'; else if (c.tagName === 'SELECT') v = c.selectedOptions[0]?.textContent.trim(); else v = c.value ? '\"' + c.value + '\"' : 'empty'; const req = c.required ? (c.checkValidity() ? ' (required)' : ' (required, invalid)') : ''; return n + ' = ' + v + req; }).filter(Boolean); const sum = d.querySelector('.sum')?.textContent.trim(); return 'Dialog \"' + (d.getAttribute('aria-label') || '') + '\"' + (sum ? ': ' + sum : '') + (f.length ? ' Fields: ' + f.join('; ') : ''); })()"
+   ],
+   "virtual_controls_js": "(() => { try { const d = document.querySelector('dialog[open]'); const c = d && d.querySelector('input[name=\"completed\"]'); if (!c) return [];\n return [{ id: 'update-hole:completed', label: 'Completed date', row_label: 'Completed',\n  region: 'Update hole dialog',\n  what: 'The date the hole reached its final depth, as YYYY-MM-DD. Saved with the dialog.',\n  not_for: 'Status or depth (their own fields in the dialog). An empty value clears the completion date.',\n  current_value: c.value,\n  set: '(v) => { const c = document.querySelector(\"dialog[open] input[name=completed]\"); if (!c) return false; const s = String(v).trim(); const m = s.match(/(\\\\d{4})-(\\\\d{1,2})-(\\\\d{1,2})/); const val = m ? m[1] + \"-\" + m[2].padStart(2, \"0\") + \"-\" + m[3].padStart(2, \"0\") : s; const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, \"value\").set; setter.call(c, val); c.dispatchEvent(new Event(\"input\", {bubbles: true})); c.dispatchEvent(new Event(\"change\", {bubbles: true})); return c.value === val; }' }]; } catch (e) { return []; } })()"
+  },
+  {
+   "id": "import-results-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label^=\"Import results for \"]"
+   },
+   "name": "Import results dialog",
+   "what": "Confirms importing this batch's results from its laboratory: the QAQC checks run against the tenant tolerances and the batch moves to received, ready for review. Import confirms; Cancel or the cross closes without importing.",
+   "not_here": "Accepting, holding or rejecting the batch: separate actions on the batch page once results are imported.",
+   "facts_js": [
+    "(() => { const d = document.querySelector('dialog[open]'); if (!d) return null; const f = [...d.querySelectorAll('label')].map(l => { const c = l.querySelector('input,select,textarea'); if (!c) return null; const n = (l.querySelector('span')?.textContent || l.textContent).replace(/\\s+/g, ' ').trim(); let v; if (c.type === 'checkbox') v = c.checked ? 'ticked' : 'not ticked'; else if (c.tagName === 'SELECT') v = c.selectedOptions[0]?.textContent.trim(); else v = c.value ? '\"' + c.value + '\"' : 'empty'; const req = c.required ? (c.checkValidity() ? ' (required)' : ' (required, invalid)') : ''; return n + ' = ' + v + req; }).filter(Boolean); const sum = d.querySelector('.sum')?.textContent.trim(); return 'Dialog \"' + (d.getAttribute('aria-label') || '') + '\"' + (sum ? ': ' + sum : '') + (f.length ? ' Fields: ' + f.join('; ') : ''); })()"
+   ]
+  },
+  {
+   "id": "accept-batch-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label^=\"Accept \"]"
+   },
+   "name": "Accept batch dialog",
+   "what": "Confirms accepting this batch: its grades are released to intercepts and estimates and its holes move to assayed. When the batch has QAQC failures, a required tick box confirms each failure has been reviewed. Accept confirms; Cancel or the cross closes without accepting.",
+   "not_here": "Withholding the batch while the laboratory re-runs checks is Place on hold; sending it back for re-assay is Reject.",
+   "facts_js": [
+    "(() => { const d = document.querySelector('dialog[open]'); if (!d) return null; const f = [...d.querySelectorAll('label')].map(l => { const c = l.querySelector('input,select,textarea'); if (!c) return null; const n = (l.querySelector('span')?.textContent || l.textContent).replace(/\\s+/g, ' ').trim(); let v; if (c.type === 'checkbox') v = c.checked ? 'ticked' : 'not ticked'; else if (c.tagName === 'SELECT') v = c.selectedOptions[0]?.textContent.trim(); else v = c.value ? '\"' + c.value + '\"' : 'empty'; const req = c.required ? (c.checkValidity() ? ' (required)' : ' (required, invalid)') : ''; return n + ' = ' + v + req; }).filter(Boolean); const sum = d.querySelector('.sum')?.textContent.trim(); return 'Dialog \"' + (d.getAttribute('aria-label') || '') + '\"' + (sum ? ': ' + sum : '') + (f.length ? ' Fields: ' + f.join('; ') : ''); })()"
+   ]
+  },
+  {
+   "id": "hold-batch-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label$=\" on QAQC hold\"]"
+   },
+   "name": "Place on hold dialog",
+   "what": "Confirms putting this batch on QAQC hold: it stays out of intercepts and estimates until it is accepted. Place on hold confirms; Cancel or the cross closes without changing the batch.",
+   "not_here": "Accepting is Accept batch; returning to the laboratory for re-assay is Reject.",
+   "facts_js": [
+    "(() => { const d = document.querySelector('dialog[open]'); if (!d) return null; const f = [...d.querySelectorAll('label')].map(l => { const c = l.querySelector('input,select,textarea'); if (!c) return null; const n = (l.querySelector('span')?.textContent || l.textContent).replace(/\\s+/g, ' ').trim(); let v; if (c.type === 'checkbox') v = c.checked ? 'ticked' : 'not ticked'; else if (c.tagName === 'SELECT') v = c.selectedOptions[0]?.textContent.trim(); else v = c.value ? '\"' + c.value + '\"' : 'empty'; const req = c.required ? (c.checkValidity() ? ' (required)' : ' (required, invalid)') : ''; return n + ' = ' + v + req; }).filter(Boolean); const sum = d.querySelector('.sum')?.textContent.trim(); return 'Dialog \"' + (d.getAttribute('aria-label') || '') + '\"' + (sum ? ': ' + sum : '') + (f.length ? ' Fields: ' + f.join('; ') : ''); })()"
+   ]
+  },
+  {
+   "id": "reject-batch-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open]:has(textarea[placeholder^=\"Which checks failed\"])"
+   },
+   "name": "Reject batch dialog",
+   "what": "Rejects this batch back to the laboratory for re-assay at the laboratory's cost; its holes return to sampled. A reason, sent to the laboratory, is required. Reject batch confirms; Cancel or the cross closes without rejecting.",
+   "not_here": "Holding the batch while checks are re-run is Place on hold; accepting is Accept batch.",
+   "facts_js": [
+    "(() => { const d = document.querySelector('dialog[open]'); if (!d) return null; const f = [...d.querySelectorAll('label')].map(l => { const c = l.querySelector('input,select,textarea'); if (!c) return null; const n = (l.querySelector('span')?.textContent || l.textContent).replace(/\\s+/g, ' ').trim(); let v; if (c.type === 'checkbox') v = c.checked ? 'ticked' : 'not ticked'; else if (c.tagName === 'SELECT') v = c.selectedOptions[0]?.textContent.trim(); else v = c.value ? '\"' + c.value + '\"' : 'empty'; const req = c.required ? (c.checkValidity() ? ' (required)' : ' (required, invalid)') : ''; return n + ' = ' + v + req; }).filter(Boolean); const sum = d.querySelector('.sum')?.textContent.trim(); return 'Dialog \"' + (d.getAttribute('aria-label') || '') + '\"' + (sum ? ': ' + sum : '') + (f.length ? ' Fields: ' + f.join('; ') : ''); })()"
+   ]
+  }
+ ],
+ "controls": [
+  {
+   "key": {
+    "page": "update-hole-dialog",
+    "text": "Close dialog",
+    "role": "button"
+   },
+   "region": "Update hole dialog, title bar",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "update-hole-dialog",
+    "text": "Cancel",
+    "role": "button"
+   },
+   "region": "Update hole dialog, buttons",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "import-results-dialog",
+    "text": "Close dialog",
+    "role": "button"
+   },
+   "region": "Import results dialog, title bar",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "import-results-dialog",
+    "text": "Cancel",
+    "role": "button"
+   },
+   "region": "Import results dialog, buttons",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "accept-batch-dialog",
+    "text": "Close dialog",
+    "role": "button"
+   },
+   "region": "Accept batch dialog, title bar",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "accept-batch-dialog",
+    "text": "Cancel",
+    "role": "button"
+   },
+   "region": "Accept batch dialog, buttons",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "hold-batch-dialog",
+    "text": "Close dialog",
+    "role": "button"
+   },
+   "region": "Place on hold dialog, title bar",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "hold-batch-dialog",
+    "text": "Cancel",
+    "role": "button"
+   },
+   "region": "Place on hold dialog, buttons",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "reject-batch-dialog",
+    "text": "Close dialog",
+    "role": "button"
+   },
+   "region": "Reject batch dialog, title bar",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "reject-batch-dialog",
+    "text": "Cancel",
+    "role": "button"
+   },
+   "region": "Reject batch dialog, buttons",
+   "what": "Closes the dialog and leaves the record as it was.",
+   "not_for": "Confirming (the dialog's primary button)."
+  },
+  {
+   "key": {
+    "page": "update-hole-dialog",
+    "row_label": "Status"
+   },
+   "region": "Update hole dialog",
+   "what": "The hole's status after saving.",
+   "not_for": "The completion date or depth (their own fields).",
+   "options": [
+    "planned",
+    "drilling",
+    "completed",
+    "abandoned",
+    "logged",
+    "sampled",
+    "assayed"
+   ]
+  },
+  {
+   "key": {
+    "page": "update-hole-dialog",
+    "row_label": "Depth, m"
+   },
+   "region": "Update hole dialog",
+   "what": "The hole's actual depth in metres, in steps of 0.5.",
+   "not_for": "The planned depth, a separate value shown on the hole page."
+  },
+  {
+   "key": {
+    "page": "update-hole-dialog",
+    "text": "Save",
+    "role": "button"
+   },
+   "region": "Update hole dialog, buttons",
+   "what": "Saves status, depth and completion date and closes the dialog.",
+   "not_for": "Posting a comment (Comments on the page)."
+  },
+  {
+   "key": {
+    "page": "import-results-dialog",
+    "text": "Import",
+    "role": "button"
+   },
+   "region": "Import results dialog, buttons",
+   "what": "Imports the results, runs the QAQC checks and moves the batch to received.",
+   "not_for": "Accepting the batch, which is a later, separate step."
+  },
+  {
+   "key": {
+    "page": "accept-batch-dialog",
+    "text_regex": "^I have reviewed each failure",
+    "role": "checkbox"
+   },
+   "region": "Accept batch dialog",
+   "what": "Required confirmation, shown only when the batch has QAQC failures, that each failure has been reviewed.",
+   "not_for": "Clearing the failures; they stay recorded against the batch."
+  },
+  {
+   "key": {
+    "page": "accept-batch-dialog",
+    "text": "Accept",
+    "role": "button"
+   },
+   "region": "Accept batch dialog, buttons",
+   "what": "Accepts the batch: releases grades to intercepts and estimates, moves the holes to assayed. Acts once the required confirmation (when shown) is ticked.",
+   "not_for": "Placing on hold or rejecting (separate buttons on the batch page)."
+  },
+  {
+   "key": {
+    "page": "hold-batch-dialog",
+    "text": "Place on hold",
+    "role": "button"
+   },
+   "region": "Place on hold dialog, buttons",
+   "what": "Puts the batch on QAQC hold; it stays out of intercepts and estimates until accepted.",
+   "not_for": "Rejecting it back to the laboratory."
+  },
+  {
+   "key": {
+    "page": "reject-batch-dialog",
+    "row_label": "Reason sent to the laboratory"
+   },
+   "region": "Reject batch dialog",
+   "what": "Required reason sent to the laboratory: which checks failed and what is requested.",
+   "not_for": "A comment on the batch (Comments on the page)."
+  },
+  {
+   "key": {
+    "page": "reject-batch-dialog",
+    "text": "Reject batch",
+    "role": "button"
+   },
+   "region": "Reject batch dialog, buttons",
+   "what": "Rejects the batch for re-assay at the laboratory's cost; its holes return to sampled. Acts once a reason is written.",
+   "not_for": "Holding the batch while checks are re-run (Place on hold)."
+  },
+  {
+   "key": {
+    "row_label": "Drillholes",
+    "text_regex": "^All holes\\b"
+   },
+   "region": "Drilling left column",
+   "what": "Shows the full drillhole list with no status cut. The number is the count of holes in the tenant.",
+   "not_for": "Filtering by project or type (the filters above the list).",
+   "note": "Count in the label varies; matched by prefix."
+  },
+  {
+   "key": {
+    "row_label": "Drillholes",
+    "text_regex": "^Drilling now\\b"
+   },
+   "region": "Drilling left column",
+   "what": "Cuts the drillhole list to holes with a rig on them (status drilling).",
+   "not_for": "Planned holes (Planned) or finished ones (All holes)."
+  },
+  {
+   "key": {
+    "row_label": "Drillholes",
+    "text_regex": "^Planned\\b"
+   },
+   "region": "Drilling left column",
+   "what": "Cuts the drillhole list to holes designed but not started (status planned).",
+   "not_for": "Planning new holes, which is under Programmes."
+  },
+  {
+   "key": {
+    "row_label": "Drillholes",
+    "text_regex": "^Awaiting sampling\\b"
+   },
+   "region": "Drilling left column",
+   "what": "Cuts the drillhole list to holes logged and waiting to be sampled and dispatched (status logged).",
+   "not_for": "Dispatching them, which is New dispatch under Assays."
+  },
+  {
+   "key": {
+    "row_label": "Drillholes",
+    "text_regex": "^Abandoned\\b"
+   },
+   "region": "Drilling left column",
+   "what": "Cuts the drillhole list to holes stopped short of three quarters of planned depth.",
+   "not_for": "Changing a hole's status (Update hole on the hole page)."
+  },
+  {
+   "key": {
+    "row_label": "Results",
+    "text_regex": "^Significant intercepts\\b"
+   },
+   "region": "Drilling left column",
+   "what": "Opens the tenant-wide Intercepts list and scatter.",
+   "not_for": "One hole's intercepts, which are on that hole's page."
+  },
+  {
+   "key": {
+    "row_label": "Batches",
+    "text_regex": "^All batches\\b"
+   },
+   "region": "Assays left column",
+   "what": "Shows the full batch list with no status cut.",
+   "not_for": "Filtering by project or laboratory (the filters above the list).",
+   "note": "Count in the label varies; matched by prefix."
+  },
+  {
+   "key": {
+    "row_label": "Batches",
+    "text_regex": "^At the laboratory\\b"
+   },
+   "region": "Assays left column",
+   "what": "Cuts the batch list to batches still at the laboratory (submitted, in preparation or analysing).",
+   "not_for": "Importing their results, which is on the batch's page."
+  },
+  {
+   "key": {
+    "row_label": "Batches",
+    "text_regex": "^Received, unreviewed\\b"
+   },
+   "region": "Assays left column",
+   "what": "Cuts the batch list to batches whose results are in and QAQC-checked but not yet reviewed.",
+   "not_for": "Accepting them, which is on each batch's page."
+  },
+  {
+   "key": {
+    "row_label": "Batches",
+    "text_regex": "^QAQC hold\\b"
+   },
+   "region": "Assays left column",
+   "what": "Cuts the batch list to batches withheld after a failed QAQC check.",
+   "not_for": "The QAQC summary charts (QAQC summary below)."
+  },
+  {
+   "key": {
+    "row_label": "Batches",
+    "text_regex": "^Accepted\\b"
+   },
+   "region": "Assays left column",
+   "what": "Cuts the batch list to batches reviewed and released.",
+   "not_for": "Rejected batches, which appear under All batches."
+  },
+  {
+   "key": {
+    "row_label": "Quality",
+    "text_regex": "^QAQC summary$"
+   },
+   "region": "Assays left column",
+   "what": "Opens the QAQC summary: pass rate by month, failures by project, record by laboratory.",
+   "not_for": "Changing tolerances (Admin) or reviewing one batch (its page)."
+  },
+  {
+   "key": {
+    "row_label": "Quality",
+    "text_regex": "^Sample register\\b"
+   },
+   "region": "Assays left column",
+   "what": "Opens the register of every sample in the tenant.",
+   "not_for": "Batch-level views (the batch list)."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "row_label": "Hole id"
+   },
+   "region": "Drillhole filters",
+   "what": "Narrows the list to holes whose id contains the text typed.",
+   "not_for": "Searching the whole tenant (header search) or filtering by status (left column)."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "row_label": "Project"
+   },
+   "region": "Drillhole filters",
+   "what": "Narrows the list to one project's holes; All projects removes the filter.",
+   "not_for": "Opening a project's own page (the project name in the table)."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "row_label": "Type"
+   },
+   "region": "Drillhole filters",
+   "what": "Narrows the list to one hole type: DDH diamond, RC reverse circulation, AC aircore or Sonic.",
+   "not_for": "Status cuts (left column).",
+   "options": [
+    "All types",
+    "DDH",
+    "RC",
+    "AC",
+    "Sonic"
+   ]
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text": "Clear",
+    "role": "link"
+   },
+   "region": "Drillhole filters",
+   "what": "Removes every filter and status cut, showing all holes.",
+   "not_for": "Resetting sort order or page."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text": "Values behind this chart"
+   },
+   "region": "Holes completed chart",
+   "what": "Expands a table of the numbers drawn in the holes-completed-by-month chart.",
+   "not_for": "Filtering the drillhole table."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text_regex": "^Sort by ",
+    "role": "button"
+   },
+   "region": "Drillhole table header",
+   "what": "Sorts the drillhole table by the column named; a second press reverses the order.",
+   "not_for": "Filtering rows (the filters above).",
+   "note": "One entry for every column header."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text_regex": "^[A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$",
+    "role": "link"
+   },
+   "region": "Drillhole table, Hole column",
+   "what": "Opens this hole's page.",
+   "not_for": "The project or programme (their own columns).",
+   "note": "Keyed on the hole-id shape, not on any one hole."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text_regex": "^PRG-\\d{4}-\\d{3}$",
+    "role": "link"
+   },
+   "region": "Drillhole table, Programme column",
+   "what": "Opens the hole's programme (Programmes).",
+   "not_for": "The hole itself (Hole column).",
+   "note": "Keyed on the programme-code shape."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|Skip to content|Open|Cancel|Clear|Tolerances|New dispatch|All holes|Drilling now|Planned|Awaiting sampling|Abandoned|Significant intercepts|All batches|At the laboratory|Received, unreviewed|QAQC hold|Accepted|QAQC summary|Sample register)\\b)(?!(hole|batch) )(?![A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$)(?!LAB-\\d)(?!PRG-\\d).+",
+    "role": "link"
+   },
+   "region": "Drillhole table, Project column",
+   "what": "Opens this project (Projects).",
+   "not_for": "Filtering the list to the project, which is the Project filter above.",
+   "note": "Matches any link on this page whose text is a free name; the only such links are project names in the table."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text_regex": "^Significant only\\b",
+    "role": "checkbox"
+   },
+   "region": "Intercepts filters",
+   "what": "Ticked (default): only significant intercepts, at least 1.5× cut-off over the commodity's minimum length. Unticked: every run above cut-off.",
+   "not_for": "Changing cut-offs or minimum lengths (Admin, Price deck and cut-offs)."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text": "Values behind this chart"
+   },
+   "region": "Intercept scatter",
+   "what": "Expands a table of the values drawn in the length-against-grade scatter.",
+   "not_for": "Filtering the intercepts table."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text_regex": "^Sort by ",
+    "role": "button"
+   },
+   "region": "Intercepts table header",
+   "what": "Sorts the intercepts by the column named; a second press reverses the order.",
+   "not_for": "Filtering (Significant only)."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text_regex": "^[A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$",
+    "role": "link"
+   },
+   "region": "Intercepts table, Hole column",
+   "what": "Opens the intercept's hole.",
+   "not_for": "The project (Project column).",
+   "note": "Keyed on the hole-id shape."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|Skip to content|Open|Cancel|Clear|Tolerances|New dispatch|All holes|Drilling now|Planned|Awaiting sampling|Abandoned|Significant intercepts|All batches|At the laboratory|Received, unreviewed|QAQC hold|Accepted|QAQC summary|Sample register)\\b)(?!(hole|batch) )(?![A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$)(?!LAB-\\d)(?!PRG-\\d).+",
+    "role": "link"
+   },
+   "region": "Intercepts table, Project column",
+   "what": "Opens this project (Projects).",
+   "not_for": "The hole (Hole column).",
+   "note": "Free-name links on this page are project names."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text": "Update hole",
+    "role": "button"
+   },
+   "region": "Hole header",
+   "what": "Opens the Update hole dialog to change status, depth and completion date. Shown only to roles with hole.write.",
+   "not_for": "Dispatching samples (Assays → New dispatch) or accepting results (the batch page)."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text_regex": "^batch ",
+    "role": "link"
+   },
+   "region": "Hole summary, Batches",
+   "what": "Opens a sample batch this hole's samples went in.",
+   "not_for": "The sample register or the batch list."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text_regex": "^read from the ",
+    "role": "button"
+   },
+   "region": "Hole summary, source line",
+   "what": "States where the figures above come from; when it offers show method, it expands the method; otherwise it is a label.",
+   "not_for": "Refreshing or editing the figures."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text": "Values behind this chart"
+   },
+   "region": "Downhole grade profile",
+   "what": "Expands a note on the values behind the grade profile (the Samples table lists every interval).",
+   "not_for": "Filtering the samples table."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "row_label": "Add a comment"
+   },
+   "region": "Comments",
+   "what": "Text of a comment on this hole; typing @ and a first name suggests a colleague to notify.",
+   "not_for": "Changing the hole's data (Update hole)."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text": "Post comment",
+    "role": "button"
+   },
+   "region": "Comments",
+   "what": "Posts the comment typed above on this hole. Disabled while the comment box is empty.",
+   "not_for": "Saving hole changes (Update hole dialog's Save)."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text_regex": "^Sort by ",
+    "role": "button"
+   },
+   "region": "Samples table header",
+   "what": "Sorts this hole's samples by the column named.",
+   "not_for": "Filtering; this table lists every sample of the hole."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text_regex": "^LAB-\\d{2}-\\d{4,6}$",
+    "role": "link"
+   },
+   "region": "Samples table, Batch column",
+   "what": "Opens the sample's batch.",
+   "not_for": "The sample itself, whose details are in this row and in the Sample register.",
+   "note": "Keyed on the batch-id shape."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|Skip to content|Open|Cancel|Clear|Tolerances|New dispatch|All holes|Drilling now|Planned|Awaiting sampling|Abandoned|Significant intercepts|All batches|At the laboratory|Received, unreviewed|QAQC hold|Accepted|QAQC summary|Sample register)\\b)(?!(hole|batch) )(?![A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$)(?!LAB-\\d)(?!PRG-\\d).+",
+    "role": "link"
+   },
+   "region": "Hole header, under the hole id",
+   "what": "The first link opens the hole's project (Projects area); the second opens its drilling programme (Programmes area).",
+   "not_for": "Other holes (Drilling breadcrumb).",
+   "note": "Project and programme names are free text and carry no other key; one entry covers both, in the order shown."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text": "New dispatch",
+    "role": "link"
+   },
+   "region": "Batch list header",
+   "what": "Opens the New sample dispatch form to send logged holes' samples to a laboratory.",
+   "not_for": "Importing or reviewing results of an existing batch (its page)."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "row_label": "Project"
+   },
+   "region": "Batch filters",
+   "what": "Narrows the batch list to one project's batches.",
+   "not_for": "Opening the project's page."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "row_label": "Laboratory"
+   },
+   "region": "Batch filters",
+   "what": "Narrows the batch list to one laboratory's batches.",
+   "not_for": "Laboratory performance (QAQC summary)."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text": "Clear",
+    "role": "link"
+   },
+   "region": "Batch filters",
+   "what": "Removes every filter and status cut, showing all batches.",
+   "not_for": "Resetting sort order."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text_regex": "^Sort by ",
+    "role": "button"
+   },
+   "region": "Batch table header",
+   "what": "Sorts the batch list by the column named; a second press reverses the order.",
+   "not_for": "Filtering (filters above, left column)."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text_regex": "^LAB-\\d{2}-\\d{4,6}$",
+    "role": "link"
+   },
+   "region": "Batch table, Batch column",
+   "what": "Opens this batch's page (QAQC and review actions).",
+   "not_for": "The project (Project column).",
+   "note": "Keyed on the batch-id shape."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|Skip to content|Open|Cancel|Clear|Tolerances|New dispatch|All holes|Drilling now|Planned|Awaiting sampling|Abandoned|Significant intercepts|All batches|At the laboratory|Received, unreviewed|QAQC hold|Accepted|QAQC summary|Sample register)\\b)(?!(hole|batch) )(?![A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$)(?!LAB-\\d)(?!PRG-\\d).+",
+    "role": "link"
+   },
+   "region": "Batch table, Project column",
+   "what": "Opens this project (Projects).",
+   "not_for": "Filtering to the project (Project filter).",
+   "note": "Free-name links on this page are project names."
+  },
+  {
+   "key": {
+    "page": "assays-new",
+    "row_label": "Project"
+   },
+   "region": "New sample dispatch form",
+   "what": "The project whose logged holes are offered for dispatch; changing it replaces the list of holes.",
+   "not_for": "Filtering an existing list; this starts a new dispatch."
+  },
+  {
+   "key": {
+    "page": "assays-new",
+    "row_label": "Laboratory"
+   },
+   "region": "New sample dispatch form",
+   "what": "The laboratory the samples go to; each option shows its quoted turnaround in days.",
+   "not_for": "The assay method, which is set by the laboratory and project."
+  },
+  {
+   "key": {
+    "page": "assays-new",
+    "text": "Cancel",
+    "role": "link"
+   },
+   "region": "New sample dispatch form",
+   "what": "Leaves the form and returns to the batch list, with the dispatch unsent.",
+   "not_for": "Removing holes from the dispatch (untick them)."
+  },
+  {
+   "key": {
+    "page": "assays-new",
+    "text": "Submit dispatch",
+    "role": "button"
+   },
+   "region": "New sample dispatch form",
+   "what": "Creates the batch: assigns sample numbers, inserts control samples, sends to the chosen laboratory and moves the included holes to sampled. Enabled once at least one hole is included, for roles with assay rights.",
+   "not_for": "Importing results (batch page, once the laboratory has them)."
+  },
+  {
+   "key": {
+    "page": "assays-qaqc",
+    "text": "Tolerances",
+    "role": "link"
+   },
+   "region": "QAQC summary header",
+   "what": "Opens Admin → QAQC tolerances, where the sigma, blank and duplicate limits are set.",
+   "not_for": "Reviewing failures of a batch (its page)."
+  },
+  {
+   "key": {
+    "page": "assays-qaqc",
+    "text": "Values behind this chart"
+   },
+   "region": "QAQC charts",
+   "what": "Expands the table of numbers behind the chart it sits under (pass rate by month, or failures by project).",
+   "not_for": "Filtering anything.",
+   "note": "Two on the page, one per chart."
+  },
+  {
+   "key": {
+    "page": "assays-qaqc",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|Skip to content|Open|Cancel|Clear|Tolerances|New dispatch|All holes|Drilling now|Planned|Awaiting sampling|Abandoned|Significant intercepts|All batches|At the laboratory|Received, unreviewed|QAQC hold|Accepted|QAQC summary|Sample register)\\b)(?!(hole|batch) )(?![A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$)(?!LAB-\\d)(?!PRG-\\d).+",
+    "role": "link"
+   },
+   "region": "QAQC tables and failures chart",
+   "what": "In By laboratory: opens the batch list filtered to that laboratory. In By project: opens that project's assays tab (Projects area). A bar in Failures by project opens the batch list filtered to that project.",
+   "not_for": "Changing laboratory or project records.",
+   "note": "Laboratory and project names carry no other key."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "row_label": "Sample, hole or batch id"
+   },
+   "region": "Sample register filters",
+   "what": "Narrows the register to samples whose sample number, hole id or batch id contains the text typed.",
+   "not_for": "Tenant-wide search (header search)."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "row_label": "Project"
+   },
+   "region": "Sample register filters",
+   "what": "Narrows the register to one project's samples.",
+   "not_for": "Opening the project."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "row_label": "Type"
+   },
+   "region": "Sample register filters",
+   "what": "Narrows the register to one sample type: core, chip, or a control sample (standard, blank, duplicate).",
+   "not_for": "QAQC pass rates (QAQC summary).",
+   "options": [
+    "All",
+    "core",
+    "chip",
+    "standard",
+    "blank",
+    "duplicate"
+   ]
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "text": "Clear",
+    "role": "link"
+   },
+   "region": "Sample register filters",
+   "what": "Removes every filter.",
+   "not_for": "Resetting sort order."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "text_regex": "^Sort by ",
+    "role": "button"
+   },
+   "region": "Sample register header",
+   "what": "Sorts the register by the column named.",
+   "not_for": "Filtering (filters above)."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "text_regex": "^[A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$",
+    "role": "link"
+   },
+   "region": "Sample register, Hole column",
+   "what": "Opens the sample's hole.",
+   "not_for": "The batch (Batch column).",
+   "note": "Keyed on the hole-id shape."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "text_regex": "^LAB-\\d{2}-\\d{4,6}$",
+    "role": "link"
+   },
+   "region": "Sample register, Batch column",
+   "what": "Opens the sample's batch.",
+   "not_for": "The hole (Hole column).",
+   "note": "Keyed on the batch-id shape."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Import results",
+    "role": "button"
+   },
+   "region": "Batch header actions",
+   "what": "Opens the Import results dialog for a batch still at the laboratory: imports results, runs QAQC checks, moves it to received. Shown only to qaqc.review at that status.",
+   "not_for": "Accepting the batch, offered on the batch page once results are imported."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Accept batch",
+    "role": "button"
+   },
+   "region": "Batch header actions",
+   "what": "Opens the Accept dialog: releases grades to intercepts and estimates and moves the holes to assayed.",
+   "not_for": "Withholding (Place on hold) or returning to the laboratory (Reject)."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Place on hold",
+    "role": "button"
+   },
+   "region": "Batch header actions",
+   "what": "Opens the dialog to put the batch on QAQC hold while the laboratory re-runs failed checks.",
+   "not_for": "Rejecting for full re-assay (Reject) or accepting (Accept batch)."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Reject",
+    "role": "button"
+   },
+   "region": "Batch header actions",
+   "what": "Opens the Reject dialog to send the batch back for re-assay, with a reason to the laboratory.",
+   "not_for": "Holding for re-run checks (Place on hold)."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text_regex": "^hole ",
+    "role": "link"
+   },
+   "region": "Batch summary, Holes",
+   "what": "Opens a drillhole whose samples are in this batch.",
+   "not_for": "The sample register."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text_regex": "^read from the ",
+    "role": "button"
+   },
+   "region": "Batch summary, source line",
+   "what": "States where the batch figures come from (laboratory certificate and sample records); when it offers show method, it expands the method; otherwise it is a label.",
+   "not_for": "Importing results (Import results)."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "row_label": "Add a comment"
+   },
+   "region": "Comments",
+   "what": "Text of a comment on this batch; typing @ and a first name suggests a colleague to notify.",
+   "not_for": "The reason for a rejection, which is written in the Reject dialog."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Post comment",
+    "role": "button"
+   },
+   "region": "Comments",
+   "what": "Posts the comment typed above on this batch. Disabled while the box is empty.",
+   "not_for": "Accepting, holding or rejecting the batch."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text_regex": "^Sort by ",
+    "role": "button"
+   },
+   "region": "Batch samples table header",
+   "what": "Sorts this batch's samples by the column named.",
+   "not_for": "Filtering; this table lists every sample of the batch."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text_regex": "^[A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$",
+    "role": "link"
+   },
+   "region": "Batch samples table, Hole column",
+   "what": "Opens the sample's hole.",
+   "not_for": "The batch in view.",
+   "note": "Keyed on the hole-id shape."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|Skip to content|Open|Cancel|Clear|Tolerances|New dispatch|All holes|Drilling now|Planned|Awaiting sampling|Abandoned|Significant intercepts|All batches|At the laboratory|Received, unreviewed|QAQC hold|Accepted|QAQC summary|Sample register)\\b)(?!(hole|batch) )(?![A-Z]{2}-(DDH|RC|AC|Sonic)-\\d{3}$)(?!LAB-\\d)(?!PRG-\\d).+",
+    "role": "link"
+   },
+   "region": "Batch header, under the batch id",
+   "what": "Opens the batch's project (Projects area).",
+   "not_for": "Filtering the batch list by project.",
+   "note": "Project names carry no other key."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text": "Drilling",
+    "role": "link"
+   },
+   "region": "Breadcrumb above the hole id (the main navigation has a Drilling item with the same target)",
+   "what": "Returns to the drillhole list.",
+   "not_for": "The hole's project or programme (links under the hole id).",
+   "note": "Also matches the main-navigation Drilling link on this page; both open the drillhole list."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Assays",
+    "role": "link"
+   },
+   "region": "Breadcrumb above the heading (the main navigation has an Assays item with the same target)",
+   "what": "Returns to the sample batch list.",
+   "not_for": "The QAQC summary or sample register (left column).",
+   "note": "Also matches the main-navigation Assays link on this page; both open the batch list."
+  },
+  {
+   "key": {
+    "page": "assays-new",
+    "text": "Assays",
+    "role": "link"
+   },
+   "region": "Breadcrumb above the heading (the main navigation has an Assays item with the same target)",
+   "what": "Returns to the sample batch list.",
+   "not_for": "The QAQC summary or sample register (left column).",
+   "note": "Also matches the main-navigation Assays link on this page; both open the batch list."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text": "First",
+    "role": "button"
+   },
+   "region": "Pager under the drillhole table",
+   "what": "Shows the first page of rows of the drillhole table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text": "Previous",
+    "role": "button"
+   },
+   "region": "Pager under the drillhole table",
+   "what": "Shows the previous page of rows of the drillhole table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text": "Next",
+    "role": "button"
+   },
+   "region": "Pager under the drillhole table",
+   "what": "Shows the next page of rows of the drillhole table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-list",
+    "text": "Last",
+    "role": "button"
+   },
+   "region": "Pager under the drillhole table",
+   "what": "Shows the last page of rows of the drillhole table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text": "First",
+    "role": "button"
+   },
+   "region": "Pager under the intercepts table",
+   "what": "Shows the first page of rows of the intercepts table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text": "Previous",
+    "role": "button"
+   },
+   "region": "Pager under the intercepts table",
+   "what": "Shows the previous page of rows of the intercepts table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text": "Next",
+    "role": "button"
+   },
+   "region": "Pager under the intercepts table",
+   "what": "Shows the next page of rows of the intercepts table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-intercepts",
+    "text": "Last",
+    "role": "button"
+   },
+   "region": "Pager under the intercepts table",
+   "what": "Shows the last page of rows of the intercepts table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text": "First",
+    "role": "button"
+   },
+   "region": "Pager under the samples table",
+   "what": "Shows the first page of rows of the samples table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text": "Previous",
+    "role": "button"
+   },
+   "region": "Pager under the samples table",
+   "what": "Shows the previous page of rows of the samples table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text": "Next",
+    "role": "button"
+   },
+   "region": "Pager under the samples table",
+   "what": "Shows the next page of rows of the samples table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "drilling-hole",
+    "text": "Last",
+    "role": "button"
+   },
+   "region": "Pager under the samples table",
+   "what": "Shows the last page of rows of the samples table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text": "First",
+    "role": "button"
+   },
+   "region": "Pager under the batch table",
+   "what": "Shows the first page of rows of the batch table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text": "Previous",
+    "role": "button"
+   },
+   "region": "Pager under the batch table",
+   "what": "Shows the previous page of rows of the batch table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text": "Next",
+    "role": "button"
+   },
+   "region": "Pager under the batch table",
+   "what": "Shows the next page of rows of the batch table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-batches",
+    "text": "Last",
+    "role": "button"
+   },
+   "region": "Pager under the batch table",
+   "what": "Shows the last page of rows of the batch table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "text": "First",
+    "role": "button"
+   },
+   "region": "Pager under the sample register table",
+   "what": "Shows the first page of rows of the sample register table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "text": "Previous",
+    "role": "button"
+   },
+   "region": "Pager under the sample register table",
+   "what": "Shows the previous page of rows of the sample register table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "text": "Next",
+    "role": "button"
+   },
+   "region": "Pager under the sample register table",
+   "what": "Shows the next page of rows of the sample register table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-samples",
+    "text": "Last",
+    "role": "button"
+   },
+   "region": "Pager under the sample register table",
+   "what": "Shows the last page of rows of the sample register table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "First",
+    "role": "button"
+   },
+   "region": "Pager under the batch samples table",
+   "what": "Shows the first page of rows of the batch samples table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Previous",
+    "role": "button"
+   },
+   "region": "Pager under the batch samples table",
+   "what": "Shows the previous page of rows of the batch samples table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Next",
+    "role": "button"
+   },
+   "region": "Pager under the batch samples table",
+   "what": "Shows the next page of rows of the batch samples table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  },
+  {
+   "key": {
+    "page": "assays-batch",
+    "text": "Last",
+    "role": "button"
+   },
+   "region": "Pager under the batch samples table",
+   "what": "Shows the last page of rows of the batch samples table.",
+   "not_for": "Changing filters or sort.",
+   "note": "Disabled (and not offered) at the ends of the table."
+  }
+ ]
+}

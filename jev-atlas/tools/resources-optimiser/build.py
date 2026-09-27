@@ -1,0 +1,521 @@
+"""Builds jev-atlas/atlas/parts/resources-optimiser.json. Run: python3 build.py"""
+# Copied from the area author's scratch directory on 2026-09-22 by the atlas merger;
+# paths rewritten to be relative to this file and to $JEV_CLONE (the harness copy).
+import os as _os, pathlib as _pl
+_PARTS = _pl.Path(_os.environ.get("ADIT_PARTS_DIR") or _pl.Path(__file__).resolve().parents[2] / "atlas" / "parts")
+_HARNESS = _os.environ.get("JEV_CLONE", str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'vendor' / 'jev-ultrafast')).rstrip("/") + "/jev_ultrafast/"
+
+import json
+
+OUT = str(_PARTS / "resources-optimiser.json")
+
+# Page ids are prefixed so they cannot collide with other areas' fragments.
+P_RES = "resources-portfolio"
+P_EST = "resources-estimates"
+P_NEW = "resources-estimate-new"
+P_ONE = "resources-estimate"
+P_FC = "resources-forecast"
+P_DECK = "resources-price-deck"
+P_VAL = "resources-valuation"
+P_OPT = "optimiser"
+P_SCN = "optimiser-scenarios"
+P_TGT = "optimiser-targets"
+O_SUB = "resources-dlg-submit-release"
+O_STAT = "resources-dlg-change-status"
+O_DECK = "resources-dlg-edit-price-deck"
+O_SAVE = "optimiser-dlg-save-scenario"
+
+Q = r"/?(\?.*)?$"  # optional trailing slash and query string after a hash route
+
+# A project-name link, by shape: one to four capitalised words, and not one of the
+# fixed navigation labels that share that shape. Project names are data and are
+# never written into the atlas; see the notes file.
+PROJECT_LINK = (r"^(?!(?:Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|"
+                r"Forecast|Estimates|Cancel|Open|User Manual|Saved scenarios|New estimate|Price deck)$)"
+                r"[A-Z][\w'’.-]*(?: [A-Z][\w'’.-]*){0,3}$")
+ESTIMATE_LINK = r"^RES-\d{4}-\d{2}$"
+METHOD_BTN = r"^computed by ADIT.*(show|hide) method$"
+
+# ---------------------------------------------------------------- facts_js
+F_EST_LIST = r"""(() => { const q = new URLSearchParams(location.hash.split('?')[1] || ''); const f = q.get('status'); const n = document.querySelectorAll('main table tbody tr[data-key]').length; return 'Estimates listed: ' + n + (f ? ' (list filtered by the URL to status=' + f + ')' : ' (every status is listed)'); })()"""
+
+F_EST_ONE = r"""(() => { const h = document.querySelector('main .head'); if (!h) return null; const t = h.querySelector('h1'); if (t && /not found/i.test(t.textContent)) return 'This id matches no estimate; the estimates list holds every estimate.'; const st = h.querySelector('[data-status]'); const acts = [...h.querySelectorAll('.actions .btn')].map(b => b.innerText.trim().replace(/\s+/g, ' ')); return 'Estimate status: ' + (st ? st.textContent.trim() : 'unknown') + '. Header actions: ' + (acts.length ? 'offered to you: ' + acts.join(', ') : 'shown on a draft to a user with resource.write; the account menu changes the signed-in user'); })()"""
+
+F_EST_COMMENTS = r"""(() => { const t = document.querySelector('main form.comment-form textarea'); if (!t) return null; return 'Comment box: ' + (t.value.trim() ? 'holds unposted text ' + JSON.stringify(t.value.trim().slice(0, 80)) : 'empty'); })()"""
+
+F_NEW_FORM = r"""(() => { const done = document.querySelector('main .notice'); if (done) return 'Result: ' + done.innerText.trim().replace(/\s+/g, ' '); const f = document.querySelector('main form.panel'); if (!f) return null; const out = []; for (const el of f.querySelectorAll('input, select, textarea')) { const g = el.closest('fieldset')?.querySelector('legend')?.textContent.trim(); const lab = (el.closest('label')?.querySelector('span')?.textContent || '?').trim().replace(/\s+/g, ' '); const v = el.tagName === 'SELECT' ? el.selectedOptions[0]?.textContent : el.value; out.push((g ? g + ' ' : '') + lab + ' = ' + (v ? JSON.stringify(String(v).slice(0, 60)) : 'empty' + (el.placeholder && el.type === 'number' ? ' (the default ' + el.placeholder + ' is used)' : ''))); } const tonnes = [...f.querySelectorAll('fieldset input')].filter(i => /Tonnes/.test(i.closest('label')?.textContent || '')).some(i => Number(i.value) > 0); return 'New estimate form: ' + out.join('; ') + (tonnes ? '' : '. Save draft takes effect once Indicated or Inferred tonnes is above zero.'); })()"""
+
+F_OPT_STAMP = r"""(() => { const s = document.querySelector('main .stamp'); if (!s) return null; const slots = [...s.querySelectorAll('.slot')].map(x => [...x.children].map(c => c.textContent.trim().replace(/\s+/g, ' ')).join(' ')); const obj = document.querySelector('main [aria-label="Constraints"] select'); const ex = (document.querySelector('main .head .meta')?.innerText || '').match(/(\d+) excluded/); return 'Current selection: ' + slots.join(' | ') + (obj ? ' | objective: ' + obj.selectedOptions[0].textContent : '') + (ex ? ' | excluded for this run: ' + ex[1] : ''); })()"""
+
+F_OPT_ROWS = r"""(() => { const t = [...document.querySelectorAll('main table')].find(t => t.querySelector('caption')?.textContent.trim() === 'Candidate targets'); if (!t) return null; const hs = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim().toLowerCase()); const col = n => hs.findIndex(h => h.startsWith(n)); const c = {sel: col('selected'), id: col('target'), name: col('name'), proj: col('project')}; const cell = (tr, i) => i >= 0 && tr.children[i] ? tr.children[i].textContent.trim().replace(/\s+/g, ' ') : '?'; const rows = [...t.querySelectorAll('tbody tr')].map((tr, i) => { const lock = tr.querySelector('button[aria-pressed]'); return (i + 1) + '. ' + cell(tr, c.id) + ' ' + cell(tr, c.name).slice(0, 40) + ' (' + cell(tr, c.proj) + '): ' + cell(tr, c.sel) + (lock && lock.getAttribute('aria-pressed') === 'true' ? ', locked' : ''); }); return 'Candidate target rows, top to bottom; each row\'s Lock and Exclude buttons are in this same order: ' + rows.join('; '); })()"""
+
+F_SCN = r"""(() => { const rows = [...document.querySelectorAll('main table tbody tr')].filter(tr => tr.querySelector('button')); return 'Saved scenarios listed: ' + rows.length + (rows.length ? ' (' + rows.map(tr => tr.children[0].textContent.trim()).join(', ') + ')' : ''); })()"""
+
+F_DLG_SUB = r"""(() => { const d = [...document.querySelectorAll('dialog[open]')].find(d => / for release$/.test(d.getAttribute('aria-label') || '')); if (!d) return null; const c = d.querySelector('input[type=checkbox]'); return 'Archive confirmation box: ' + (c && c.checked ? 'ticked' : 'not ticked (required; Submit is refused until it is ticked)'); })()"""
+
+F_DLG_STAT = r"""(() => { const d = [...document.querySelectorAll('dialog[open]')].find(d => /^Change status of /.test(d.getAttribute('aria-label') || '')); if (!d) return null; return [...d.querySelectorAll('select')].map(s => (s.closest('label')?.querySelector('span')?.textContent.trim() || s.name) + ' = ' + (s.selectedOptions[0]?.textContent || '')).join('; '); })()"""
+
+F_DLG_DECK = r"""(() => { const d = document.querySelector('dialog[open][aria-label="Edit the price deck"]'); if (!d) return null; return 'Price deck form: ' + [...d.querySelectorAll('input')].map(i => (i.closest('label')?.querySelector('span')?.textContent || '?').trim().replace(/\s+/g, ' ') + ' = ' + (i.value === '' ? 'empty' : i.value)).join('; '); })()"""
+
+F_DLG_SAVE = r"""(() => { const d = document.querySelector('dialog[open][aria-label="Save this scenario"]'); if (!d) return null; const i = d.querySelector('input'); return 'Scenario name: ' + (i && i.value.trim() ? JSON.stringify(i.value.trim()) : 'empty (saving now would use an automatic name, Scenario and a number)'); })()"""
+
+# ---------------------------------------------------------------- virtual controls
+# The two "Tonnes, Mt" fields (and the two "Grade" fields) of the new-estimate form
+# are identical to the harness: same label, same row label. These virtual controls
+# name each by its block. set() uses the native value setter plus an input event,
+# which is the path React's onChange listens to.
+V_NEW = r"""(() => { try { const f = document.querySelector('main form.panel'); if (!f || !f.querySelector('fieldset')) return []; const all = [...f.querySelectorAll('input, select, textarea')]; const out = []; for (const fs of f.querySelectorAll('fieldset')) { const g = (fs.querySelector('legend')?.textContent || '').trim(); for (const inp of fs.querySelectorAll('input')) { const lab = (inp.closest('label')?.querySelector('span')?.textContent || '').trim().replace(/\s+/g, ' '); const idx = all.indexOf(inp); const isT = /^Tonnes/.test(lab); out.push({id: 'new-estimate:' + g + ':' + (isT ? 'tonnes' : 'grade'), label: g + ' ' + lab.charAt(0).toLowerCase() + lab.slice(1), row_label: g + ' ' + lab, region: 'New estimate form, ' + g + ' block', what: isT ? 'Tonnage of the ' + g.toLowerCase() + ' category of the new estimate, in million tonnes.' : 'Average grade of the ' + g.toLowerCase() + ' category, in the unit shown in the label (which follows the project\'s commodity).', not_for: isT ? 'The other category\'s tonnage, which is its own field; measured tonnes, which the database geologist adds after QP review.' : 'The cut-off grade (the Cut-off field) or the other category\'s grade.', current_value: inp.value, set: "(v) => { const f = document.querySelector('main form.panel'); const el = f && f.querySelectorAll('input, select, textarea')[" + idx + "]; if (!el) return false; const w = String(v).trim(); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, w); el.dispatchEvent(new Event('input', {bubbles: true})); return el.value === w; }"}); } } return out; } catch (e) { return []; } })()"""
+
+pages = [
+    {
+        "id": P_NEW,
+        "match": {"url_regex": r"#/resources/estimates/new" + Q},
+        "name": "New resource estimate",
+        "what": ("Form for recording a new resource estimate for a project: the project, the estimation method, "
+                 "the cut-off grade, and the tonnage and grade of the indicated and inferred categories, with notes. "
+                 "Saving creates the estimate as a draft authored by the signed-in user and shows a link to it; "
+                 "contained metal and the P10/P50/P90 forecast are computed by ADIT from these fields. "
+                 "Requires the resource.write permission (Project Geologist); the New estimate button on the estimates list is shown to that role."),
+        "not_here": ("Measured tonnes: added by the database geologist after QP review. "
+                     "Releasing, reviewing or changing the status of an estimate: the estimate's own page once it is saved "
+                     "(Submit for release, Change status). Existing estimates: each estimate's own page."),
+        "leads_to": {"Save draft, then the Open link it shows": P_ONE, "Cancel / Estimates breadcrumb": P_EST},
+        "facts_js": [F_NEW_FORM],
+        "virtual_controls_js": V_NEW,
+    },
+    {
+        "id": P_ONE,
+        "match": {"url_regex": r"#/resources/estimates/(?!new(?:/|\?|$))[^/?#]+" + Q},
+        "name": "Resource estimate",
+        "what": ("One resource estimate: its project, status, as-of date, method and cut-off in the header; contained metal, tonnes, grade, "
+                 "in-situ value at the price deck and the P10/P50/P90 forecast in the stamp; a table by category (measured, indicated, inferred) "
+                 "with value at deck; a chart of value sensitivity to price; and a comments thread. "
+                 "For a draft, a user with resource.write can Submit for release (raises the resource-release workflow) or Change status; "
+                 "once a release request exists, a button opens that request in Approvals."),
+        "not_here": ("Approving a release step: the release request in Approvals (the Release request button leads there). "
+                     "Author and reviewer: under the show-method toggle. "
+                     "Portfolio-wide totals: Portfolio resources; screening with a price factor and recovery: In-situ value; "
+                     "commodity prices: Price deck. Status changes apply to draft and in-review estimates; released and superseded estimates keep their status."),
+        "leads_to": {"Estimates breadcrumb": P_EST, "Release request button": "approval (Approvals area)",
+                     "Submit for release": O_SUB, "Change status": O_STAT},
+        "facts_js": [F_EST_ONE, F_EST_COMMENTS],
+    },
+    {
+        "id": P_EST,
+        "match": {"url_regex": r"#/resources/estimates" + Q},
+        "name": "Resource estimates",
+        "what": ("Table of every resource estimate in the tenant with its id, project, as-of date, status (draft, internal review, QP review, "
+                 "released, superseded), method, cut-off, tonnes, grade, contained metal, author and reviewer. "
+                 "The 'In review' view of the same list is this page with a status filter in the URL. "
+                 "Users with resource.write see a New estimate button."),
+        "not_here": ("Values in money: Portfolio resources (released estimates, at the deck) and In-situ value. "
+                     "Changing an estimate's status or submitting it: the estimate's own page. "
+                     "Ordering this list: the column headers sort it; tenant-wide search: the top-bar search box."),
+        "leads_to": {"Estimate id link": P_ONE, "Project link": "project page (Projects area)", "New estimate": P_NEW},
+        "facts_js": [F_EST_LIST],
+    },
+    {
+        "id": P_FC,
+        "match": {"url_regex": r"#/resources/forecast" + Q},
+        "name": "Forecast",
+        "what": ("P10, P50 and P90 contained metal for the latest estimate on each project, of any status, one small chart per project "
+                 "and a forecast table with the estimate id, status and unit."),
+        "not_here": ("Money values: Portfolio resources and In-situ value. The P-values are computed by ADIT from each "
+                     "estimate's own figures, which are recorded on the estimate's page."),
+        "leads_to": {"Project link in the forecast table": P_ONE},
+    },
+    {
+        "id": P_DECK,
+        "match": {"url_regex": r"#/resources/price-deck" + Q},
+        "name": "Price deck",
+        "what": ("The corporate price deck: for each commodity its price, unit, default cut-off, source and as-of date. Every valuation in "
+                 "ADIT uses it. Administrators (admin.write) see an Edit deck button; other users can only read it."),
+        "not_here": ("Default cut-offs: set in Admin, Price deck and cut-offs. The effect of a different price on a single "
+                     "estimate: its value-sensitivity chart on the estimate's page; a portfolio-wide price factor for screening: In-situ value, "
+                     "which leaves the deck as it is."),
+        "leads_to": {"Edit deck": O_DECK},
+    },
+    {
+        "id": P_VAL,
+        "match": {"url_regex": r"#/resources/valuation" + Q},
+        "name": "In-situ value",
+        "what": ("Screening valuation of every project with a released estimate: contained metal, the deck price used, in-situ value, "
+                 "value recovered at a uniform recovery, and the measured + indicated share, with a total. Two inputs, a price factor "
+                 "(% of deck) and a recovery (%), recompute the table as they change; they are not saved."),
+        "not_here": ("Values are gross in-situ figures, before mining, processing or capital cost. The price deck itself: Price deck. "
+                     "Draft and in-review estimates: Resource estimates and Forecast."),
+        "leads_to": {"Project link": P_ONE},
+    },
+    {
+        "id": P_RES,
+        "match": {"url_regex": r"#/resources" + Q},
+        "name": "Portfolio resources",
+        "what": ("Landing page of Resources: in-situ value at the corporate price deck for every project with a released estimate, "
+                 "as headline figures (total value, estimates in review, measured + indicated share, release requests pending), "
+                 "charts by project, commodity and category, and a table of released estimates by project."),
+        "not_here": ("This page counts released estimates; drafts and estimates in review: Resource estimates (All estimates / In review). "
+                     "Screening with a price factor or recovery: In-situ value. The project links in the table open the project's own "
+                     "resource tab in Projects, and the estimate id links open the estimate."),
+        "leads_to": {"Estimate id link": P_ONE, "Project link": "project resource tab (Projects area)", "Price deck button": P_DECK},
+    },
+    {
+        "id": P_SCN,
+        "match": {"url_regex": r"#/optimiser/scenarios" + Q},
+        "name": "Saved scenarios",
+        "what": ("List of optimiser scenarios saved by anyone in the tenant: name, when and by whom it was saved, objective, budget, cost, "
+                 "rig days used of available, expected value and the targets it selected. A scenario can be deleted from here."),
+        "not_here": ("Each scenario is a fixed record of a past run, kept as listed here. "
+                     "New runs and new scenarios: Programme optimiser (Save scenario)."),
+        "leads_to": {"Open the optimiser": P_OPT},
+        "facts_js": [F_SCN],
+    },
+    {
+        "id": P_TGT,
+        "match": {"url_regex": r"#/optimiser/targets" + Q},
+        "name": "Candidate targets",
+        "what": ("Read-only list of the candidate drill targets the optimiser chooses from: id, name, project, holes, metres, cost, "
+                 "rig days, probability of success, value if successful, earliest start and whether it is locked."),
+        "not_here": ("Locking, excluding and running the selection: Programme optimiser. "
+                     "Target data itself: maintained by project geologists with support."),
+        "leads_to": {"Project link": "project page (Projects area)"},
+    },
+    {
+        "id": P_OPT,
+        "match": {"url_regex": r"#/optimiser" + Q},
+        "name": "Programme optimiser",
+        "what": ("Chooses which candidate drill targets to fund in the coming season under a budget and a rig-day limit. "
+                 "Constraints at the top (budget, rig days available, objective, minimum targets per commodity) recompute the "
+                 "selection immediately. The stamp shows the selection's expected value, cost, rig days, metres and locked count; "
+                 "charts plot cost against expected value and selected cost by commodity; the Candidate targets table marks each "
+                 "target selected or gives the reason it is not, with Lock and Exclude buttons per row. Save scenario stores the "
+                 "constraints and selection under a name."),
+        "not_here": ("Past runs: Saved scenarios, as fixed records. "
+                     "Target data (cost, holes, probability): maintained by project geologists with support. The model covers budget, rig days, objective and commodity minimums; rig type, seasonal windows and shared mobilisation are outside it."),
+        "leads_to": {"Saved scenarios": P_SCN, "Save scenario": O_SAVE, "Project link": "project page (Projects area)"},
+        "facts_js": [F_OPT_STAMP, F_OPT_ROWS],
+    },
+    # ---------------- overlays (native <dialog> elements opened with showModal)
+    {
+        "id": O_SUB, "layer": "overlay",
+        "match": {"selector": "dialog[open][aria-label^='Submit '][aria-label$=' for release']"},
+        "name": "Submit estimate for release dialog",
+        "what": ("Confirms raising the resource-release workflow for this draft estimate: Database sign-off, then QP review, then manager "
+                 "release. On Submit the estimate moves to internal review and a release request is created in Approvals."),
+        "not_here": ("Approving the workflow's steps: the release request in Approvals. Moving between statuses without the workflow: Change status."),
+        "facts_js": [F_DLG_SUB],
+    },
+    {
+        "id": O_STAT, "layer": "overlay",
+        "match": {"selector": "dialog[open][aria-label^='Change status of ']"},
+        "name": "Change status dialog",
+        "what": ("Sets an unreleased estimate's status (draft, internal-review, qp-review, or superseded) and its reviewer, without the "
+                 "release workflow."),
+        "not_here": "Released: set by the release workflow (Submit for release, with its steps decided in Approvals).",
+        "facts_js": [F_DLG_STAT],
+    },
+    {
+        "id": O_DECK, "layer": "overlay",
+        "match": {"selector": "dialog[open][aria-label='Edit the price deck']"},
+        "name": "Edit the price deck dialog",
+        "what": ("Edits the price of each commodity (in the unit in its label) and the deck's source. Saving changes every valuation "
+                 "in the tenant at once and is written to the audit log."),
+        "not_here": "Default cut-offs: Admin, Price deck and cut-offs; the deck's as-of date: shown on Price deck.",
+        "facts_js": [F_DLG_DECK],
+    },
+    {
+        "id": O_SAVE, "layer": "overlay",
+        "match": {"selector": "dialog[open][aria-label='Save this scenario']"},
+        "name": "Save this scenario dialog",
+        "what": ("Names and stores the optimiser's current constraints and selection as a scenario; its summary line states the "
+                 "selection being saved."),
+        "not_here": "Saved scenarios are listed and deleted on Saved scenarios.",
+        "facts_js": [F_DLG_SAVE],
+    },
+]
+
+C = []
+def c(key, region, what, not_for, **extra):
+    e = {"key": key, "region": region, "what": what, "not_for": not_for}
+    e.update(extra)
+    C.append(e)
+
+# ---------------- section sub-navigation (left column), Resources and Optimiser
+SUB = "Left section navigation"
+c({"row_label": "Estimates", "text": "Portfolio resources", "role": "link"}, SUB,
+  "Opens Portfolio resources: value at the price deck of every released estimate, by project, commodity and category.",
+  "The list of all estimates (All estimates) or the screening valuation with recovery (In-situ value).")
+c({"row_label": "Estimates", "text_regex": r"^All estimates( \d+)?$", "role": "link"}, SUB,
+  "Opens the list of every resource estimate, any status; the number is how many there are.",
+  "Only the estimates in review (In review). It does not create an estimate (New estimate, on the list).")
+c({"row_label": "Estimates", "text_regex": r"^In review( \d+)?$", "role": "link"}, SUB,
+  "Opens the estimates list filtered to those not yet released or superseded (draft, internal review, QP review); the number is how many.",
+  "Approving a release step, which is in Approvals.")
+c({"row_label": "Valuation", "text": "In-situ value", "role": "link"}, SUB,
+  "Opens In-situ value: released estimates valued with an adjustable price factor and recovery, for screening.",
+  "Changing commodity prices (Price deck) or the at-deck portfolio view (Portfolio resources).")
+c({"row_label": "Valuation", "text": "Forecast", "role": "link"}, SUB,
+  "Opens Forecast: P10, P50 and P90 contained metal for the latest estimate on each project.",
+  "Money values (Portfolio resources, In-situ value).")
+c({"row_label": "Valuation", "text": "Price deck", "role": "link"}, SUB,
+  "Opens Price deck: price, unit, default cut-off, source and date of each commodity.",
+  "Screening at a different price for the portfolio (In-situ value).")
+c({"row_label": "Optimiser", "text": "Programme optimiser", "role": "link"}, SUB,
+  "Opens the programme optimiser, where constraints are set and targets locked or excluded.",
+  "The read-only target list (Candidate targets) or past saved runs (Saved scenarios).")
+c({"row_label": "Optimiser", "text_regex": r"^Candidate targets( \d+)?$", "role": "link"}, SUB,
+  "Opens the read-only list of candidate drill targets; the number is how many.",
+  "Locking or excluding targets, which is done on Programme optimiser.")
+c({"row_label": "Optimiser", "text_regex": r"^Saved scenarios( \d+)?$", "role": "link"}, SUB,
+  "Opens the list of saved optimiser scenarios; the number is how many.",
+  "Saving the current run (Save scenario on Programme optimiser).")
+
+# ---------------- Portfolio resources
+R = "Portfolio resources"
+c({"page": P_RES, "text": "Price deck", "role": "link"}, R + " header",
+  "Opens the price deck that every value on this page is computed at.",
+  "Changing the deck (the Edit deck button on Price deck).")
+c({"page": P_RES, "text_regex": METHOD_BTN}, R + " stamp",
+  "Shows or hides how the headline figures are computed (which estimates and deck are used).",
+  "Opening any estimate or changing any figure.")
+c({"page": P_RES, "text": "Values behind this chart"}, R + " chart",
+  "Expands the table of numbers the chart above it is drawn from.",
+  "Navigation; it only reveals values in place.")
+c({"page": P_RES, "text_regex": r"^Sort by "}, "Released estimates table header",
+  "Sorts the released-estimates table by the column named; pressing again reverses the order.",
+  "Filtering; every row stays in the table.")
+c({"page": P_RES, "role": "link", "text_regex": ESTIMATE_LINK}, "Released estimates table",
+  "Opens this released estimate's page.",
+  "The project's page, which is the project-name link in the same row.")
+c({"page": P_RES, "role": "link", "text_regex": PROJECT_LINK}, "Released estimates table",
+  "A project-name link: opens that project's resource tab in the Projects area.",
+  "The estimate itself, which is the estimate id link in the same row.",
+  note="Generic key: every project-name link in this table; project names are data and are matched by shape.")
+
+# ---------------- Resource estimates list
+L = "Resource estimates"
+c({"page": P_EST, "text": "New estimate", "role": "link"}, L + " header",
+  "Opens the form for recording a new resource estimate, which is saved as a draft. Shown only with resource.write.",
+  "Changing or submitting an existing estimate, which is done on that estimate's page.")
+c({"page": P_EST, "text_regex": r"^Sort by "}, L + " table header",
+  "Sorts the estimates table by the column named; pressing again reverses the order.",
+  "Filtering by status (the In review link in the left navigation does that).")
+c({"page": P_EST, "role": "link", "text_regex": ESTIMATE_LINK}, L + " table",
+  "Opens this estimate's page.",
+  "The project, which is the project-name link in the same row.")
+c({"page": P_EST, "role": "link", "text_regex": PROJECT_LINK}, L + " table",
+  "A project-name link: opens that project's page in the Projects area.",
+  "The estimate in this row, which is the estimate id link.",
+  note="Generic key: every project-name link in this table.")
+
+# ---------------- Estimate page
+E = "Estimate"
+c({"page": P_ONE, "text": "Estimates", "role": "link"}, "Breadcrumb",
+  "Returns to the list of all resource estimates.",
+  "The left-navigation filters (In review).")
+c({"page": P_ONE, "text": "Submit for release"}, E + " header",
+  "Opens the confirmation that raises the resource-release workflow (Database sign-off, QP review, Manager release) for this draft. "
+  "Shown only on a draft with no release request yet, to users with resource.write.",
+  "Setting a status directly (Change status); approving any release step (Approvals).")
+c({"page": P_ONE, "text": "Change status"}, E + " header",
+  "Opens a dialog to move this unreleased estimate between draft, internal review and QP review, mark it superseded, and set its reviewer.",
+  "Releasing it: the release workflow sets released (Submit for release, then Approvals).")
+c({"page": P_ONE, "text_regex": r"^Release request\s"}, E + " header",
+  "Opens the release request (approval workflow) raised for this estimate, in Approvals.",
+  "Raising a new request; this opens the existing one.")
+c({"page": P_ONE, "text_regex": METHOD_BTN}, E + " stamp",
+  "Shows or hides how the figures are computed, and the estimate's author, reviewer, P-value method and notes.",
+  "Editing any of them; the reviewer is set in Change status.")
+c({"page": P_ONE, "text": "Values behind this chart"}, "Value sensitivity chart",
+  "Expands the table of in-situ values at each price change the chart shows.",
+  "Changing the price deck.")
+c({"page": P_ONE, "row_label": "Add a comment"}, "Comments",
+  "Text of a new comment on this estimate; @ followed by a first name notifies that colleague when posted.",
+  "Posting it (Post comment) or changing the estimate.")
+c({"page": P_ONE, "text": "Post comment"}, "Comments",
+  "Posts the comment typed above to this estimate's thread. Does nothing while the comment box is empty.",
+  "Changing the estimate's status or submitting it.")
+
+# ---------------- Submit dialog
+c({"page": O_SUB, "role": "checkbox"}, "Submit for release dialog",
+  "Confirms that the block model, drillhole database and QAQC record are archived. Required: Submit is refused until it is ticked.",
+  "Submitting: the Submit button sends the request.")
+c({"page": O_SUB, "text": "Submit"}, "Submit for release dialog",
+  "Raises the resource-release workflow and moves the estimate to internal review. Does nothing, and the dialog stays open, while the archive box is unticked.",
+  "Approving the release; that happens step by step in Approvals.")
+c({"page": O_SUB, "text": "Cancel"}, "Submit for release dialog",
+  "Closes the dialog without submitting.", "Withdrawing a request already raised.")
+c({"page": O_SUB, "text": "Close dialog"}, "Submit for release dialog, top right",
+  "Closes the dialog without submitting (same as Cancel).", "Submitting.")
+
+# ---------------- Change status dialog
+c({"page": O_STAT, "row_label": "Status"}, "Change status dialog",
+  "The status to give the estimate. Takes effect only on Save.",
+  "Released, which the release workflow sets.",
+  options=["draft", "internal-review", "qp-review", "superseded"])
+c({"page": O_STAT, "row_label": "Reviewer"}, "Change status dialog",
+  "The reviewer recorded on the estimate (a project or database geologist, or None). Takes effect only on Save.",
+  "The approvers of the release workflow, who follow from the workflow's step roles.")
+c({"page": O_STAT, "text": "Save"}, "Change status dialog",
+  "Applies the chosen status and reviewer and closes the dialog.",
+  "Releasing the estimate.")
+c({"page": O_STAT, "text": "Cancel"}, "Change status dialog",
+  "Closes the dialog without changing anything.", "Reverting a status saved earlier.")
+c({"page": O_STAT, "text": "Close dialog"}, "Change status dialog, top right",
+  "Closes the dialog without changing anything (same as Cancel).", "Saving.")
+
+# ---------------- New estimate form
+N = "New estimate form"
+c({"page": P_NEW, "text": "Estimates", "role": "link"}, "Breadcrumb",
+  "Returns to the estimates list without saving the form.", "Saving the draft.")
+c({"page": P_NEW, "row_label": "Project"}, N,
+  "The project the estimate belongs to (open projects are listed). The unit of the cut-off and grade fields follows its commodity.",
+  "The estimation method (Method).")
+c({"page": P_NEW, "row_label": "Method"}, N,
+  "The estimation method used for the block model.",
+  "The project or the cut-off.",
+  options=["Ordinary kriging", "Ordinary kriging with top-cut", "Inverse distance squared",
+           "Polygonal, bed-thickness weighted", "Nearest neighbour"])
+c({"page": P_NEW, "text_regex": r"^(Open )?Cut-off,"}, N,
+  "The cut-off grade of the estimate, in the unit shown in its label. Left empty, the commodity's default cut-off from the price deck (shown greyed) is used.",
+  "The grade of a category (the Grade fields under Indicated and Inferred).")
+c({"page": P_NEW, "row_label": "Tonnes, Mt"}, N + ", Indicated or Inferred block",
+  "Tonnage of one category in million tonnes. There are two identical 'Tonnes, Mt' fields: the first on the form is under INDICATED, the second under INFERRED. At least one must be above zero for Save draft to work.",
+  "Grade (the field beside it) or measured tonnes, which the database geologist adds after QP review.",
+  note="Generic key: the Indicated and Inferred tonnage fields share label and row label; the virtual controls name them by block.")
+c({"page": P_NEW, "text_regex": r"^(Open )?Grade,"}, N + ", Indicated or Inferred block",
+  "Average grade of one category, in the unit shown in its label. The first Grade field is under INDICATED, the second under INFERRED.",
+  "The cut-off grade (Cut-off) or tonnage.",
+  note="Generic key: both category grade fields.")
+c({"page": P_NEW, "row_label": "Notes"}, N,
+  "Free-text notes on the estimate: domains, top-cuts, density, what changed since the last estimate.",
+  "Comments, which are posted on the estimate's page after it is saved.")
+c({"page": P_NEW, "text": "Save draft"}, N + ", bottom",
+  "Creates the estimate as a draft and replaces the form with a link to it. Does nothing, silently, while no Indicated or Inferred tonnes value is above zero.",
+  "Submitting for release, which is done on the estimate's page afterwards.")
+c({"page": P_NEW, "text": "Cancel", "role": "link"}, N + ", bottom",
+  "Leaves the form without saving and returns to the estimates list.", "Saving.")
+c({"page": P_NEW, "text_regex": r"^Open RES-"}, "Saved notice",
+  "Opens the estimate just saved.", "Creating another estimate.")
+
+# ---------------- Forecast
+c({"page": P_FC, "text": "Values behind this chart"}, "Forecast charts",
+  "Expands the P10/P50/P90 numbers behind the chart above it.", "Navigation.")
+c({"page": P_FC, "role": "link", "text_regex": PROJECT_LINK}, "Forecast table",
+  "A project-name link: opens the estimate the forecast row is taken from (the latest estimate on that project).",
+  "The project page in Projects.",
+  note="Generic key: every project-name link in the forecast table.")
+
+# ---------------- Price deck
+c({"page": P_DECK, "text": "Edit deck"}, "Price deck header",
+  "Opens the dialog to change commodity prices and the deck's source. Shown only to administrators (admin.write). A saved change revalues everything in the tenant.",
+  "Screening at a different price without changing the deck (In-situ value's price factor).")
+c({"page": O_DECK, "role": "spinbutton"}, "Edit the price deck dialog",
+  "Price of the commodity in the field's label, in its stated unit.",
+  "Default cut-offs (Admin, Price deck and cut-offs).",
+  note="Generic key: one entry for every commodity price field.")
+c({"page": O_DECK, "row_label": "Source"}, "Edit the price deck dialog",
+  "The source or name recorded for the deck.", "Any price.")
+c({"page": O_DECK, "text": "Save deck"}, "Edit the price deck dialog",
+  "Saves the prices and source; every valuation in the tenant changes immediately and the change is audited.",
+  "A private what-if (In-situ value's price factor).")
+c({"page": O_DECK, "text": "Cancel"}, "Edit the price deck dialog",
+  "Closes the dialog without saving.", "Reverting a deck saved earlier.")
+c({"page": O_DECK, "text": "Close dialog"}, "Edit the price deck dialog, top right",
+  "Closes the dialog without saving (same as Cancel).", "Saving.")
+
+# ---------------- In-situ value
+V = "In-situ value inputs"
+c({"page": P_VAL, "row_label": "Price factor, % of deck"}, V,
+  "Percentage of the deck price used for this screening (100 means the deck as is). Recomputes the table immediately, for this view only; the deck stays as it is.",
+  "The recovery (Recovery applied) or the deck itself (Price deck).")
+c({"page": P_VAL, "row_label": "Recovery applied, %"}, V,
+  "Uniform metallurgical recovery applied to every project for the recovered-value column. Recomputes immediately, for this view only.",
+  "The price (Price factor). Both inputs give gross values, before costs.")
+c({"page": P_VAL, "role": "link", "text_regex": PROJECT_LINK}, "Valuation table",
+  "A project-name link: opens the released estimate valued in this row.",
+  "The project page in Projects.",
+  note="Generic key: every project-name link in the valuation table.")
+
+# ---------------- Programme optimiser
+O = "Programme optimiser"
+c({"page": P_OPT, "text": "Saved scenarios", "role": "link"}, O + " header",
+  "Opens the list of scenarios saved earlier.", "Saving the current run (Save scenario).")
+c({"page": P_OPT, "text": "Save scenario"}, O + " header",
+  "Opens a dialog to name and store the current constraints and selection as a scenario. Shown to users with optimiser.run.",
+  "Locking targets or applying the selection to a programme; saving records the run only.")
+c({"page": P_OPT, "text_regex": r"^(Open )?Budget,"}, "Constraints",
+  "Total spending limit for the selection, in the tenant's base currency. The selection recomputes as it changes.",
+  "Rig days (a separate limit).")
+c({"page": P_OPT, "row_label": "Rig days available"}, "Constraints",
+  "Total drill-rig days available for the season. The selection recomputes as it changes.",
+  "The budget.")
+c({"page": P_OPT, "row_label": "Objective"}, "Constraints",
+  "What the selection maximises within the constraints.",
+  "The constraints themselves (budget, rig days).",
+  options=["Maximise expected value", "Maximise metres tested", "Maximise probability of success"])
+c({"page": P_OPT, "row_label": "Minimum targets per commodity"}, "Constraints",
+  "At least this many targets of each commodity are selected where they fit (0 to 3).",
+  "Forcing a particular target in (Lock).")
+c({"page": P_OPT, "text_regex": r"^Restore\s+\d+\s+excluded$"}, "Constraints",
+  "Puts every excluded target back into consideration for this run.",
+  "Unlocking targets (the Locked button on a row).")
+c({"page": P_OPT, "text_regex": METHOD_BTN}, O + " stamp",
+  "Shows or hides how the selection is computed, what the constraints mean and what the model covers.",
+  "Changing the method.")
+c({"page": P_OPT, "text": "Values behind this chart"}, O + " charts",
+  "Expands the numbers behind the chart above it.", "Navigation or changing the selection.")
+c({"page": P_OPT, "text_regex": r"^Sort by "}, "Candidate targets table header",
+  "Sorts the candidate targets table by the column named; pressing again reverses. Sorting does not change the selection.",
+  "Selecting, locking or excluding targets.")
+c({"page": P_OPT, "text": "Lock"}, "Candidate targets table, Locked column",
+  "Locks this row's target into the selection whenever it fits; stored on the target for everyone.",
+  "Excluding a target (Exclude) or saving a scenario.",
+  note="Generic key: every row has an identical Lock button; the rows fact lists the rows in the same order.")
+c({"page": P_OPT, "text": "Locked"}, "Candidate targets table, Locked column",
+  "Unlocks this row's target (for everyone) so it competes normally.",
+  "Excluding it.",
+  note="Generic key: shared by every locked row.")
+c({"page": P_OPT, "text": "Exclude"}, "Candidate targets table, last column",
+  "Leaves this row's target out of this run; Restore brings it back.",
+  "Locking, or deleting the target (target data is maintained by project geologists with support).",
+  note="Generic key: every row has an identical Exclude button; the rows fact lists the rows in the same order.")
+c({"page": P_OPT, "role": "link", "text_regex": PROJECT_LINK}, "Candidate targets table",
+  "A project-name link: opens that project's page in Projects.",
+  "The target itself, whose details are the row's own cells.",
+  note="Generic key: every project-name link in the targets table.")
+
+# ---------------- Save scenario dialog
+c({"page": O_SAVE, "row_label": "Name"}, "Save this scenario dialog",
+  "Name to store the scenario under. Left empty, an automatic name is used.",
+  "The constraints, which are taken from the page as they are.")
+c({"page": O_SAVE, "text": "Save"}, "Save this scenario dialog",
+  "Stores the scenario (constraints and selection) and closes the dialog; it then appears on Saved scenarios.",
+  "Changing the selection or locking targets.")
+c({"page": O_SAVE, "text": "Cancel"}, "Save this scenario dialog",
+  "Closes the dialog without saving.", "Discarding the run; the page keeps its settings.")
+c({"page": O_SAVE, "text": "Close dialog"}, "Save this scenario dialog, top right",
+  "Closes the dialog without saving (same as Cancel).", "Saving.")
+
+# ---------------- Saved scenarios
+c({"page": P_SCN, "text": "Open the optimiser", "role": "link"}, "Saved scenarios header",
+  "Opens the programme optimiser to run a new selection.", "Opening a saved scenario, which stays a fixed record in this list.")
+c({"page": P_SCN, "text": "Delete"}, "Saved scenarios table, Actions column",
+  "Deletes this row's saved scenario at once, with no confirmation.",
+  "Anything in the optimiser's current run.",
+  note="Generic key: one Delete per row.")
+
+# ---------------- Candidate targets (read-only)
+c({"page": P_TGT, "role": "link", "text_regex": PROJECT_LINK}, "Candidate targets table",
+  "A project-name link: opens that project's page in Projects.",
+  "Locking or excluding the target, which is done on Programme optimiser.",
+  note="Generic key: every project-name link in this table.")
+
+atlas = {
+    "app": "ADIT",
+    "version": "2026-09-22-resources-optimiser",
+    "selectors": {"dialog": ["dialog[open]"]},
+    "pages": pages,
+    "controls": C,
+}
+json.dump(atlas, open(OUT, "w"), indent=1, ensure_ascii=False)
+print(OUT, len(pages), "pages", len(C), "controls")

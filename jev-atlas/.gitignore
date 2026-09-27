@@ -1,0 +1,14 @@
+# Run logs, per-step frames and step dumps are large and are made again by running.
+runs/
+goals/runs/
+__pycache__/
+
+# The vendored harness's environment, keys and caches.
+vendor/jev-ultrafast/.venv/
+vendor/jev-ultrafast/.env
+vendor/jev-ultrafast/runs/
+vendor/jev-ultrafast/artifacts/
+
+# Replay pages are rebuilt from the runs by tools/report.py; the one behind the blog post is kept.
+demo/sessions/*/report/
+!demo/sessions/20260926-123842/report/

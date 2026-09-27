@@ -1,0 +1,1505 @@
+{
+ "app": "ADIT",
+ "version": "2026-09-22-programmes-part",
+ "selectors": {
+  "dialog": [
+   "dialog[open]"
+  ],
+  "dialog_title": [
+   "dialog[open] h2"
+  ]
+ },
+ "pages": [
+  {
+   "id": "programmes-list",
+   "match": {
+    "url_regex": "#/programmes(\\?[^#]*)?$"
+   },
+   "name": "Programmes list",
+   "what": "The register of programmes: units of field or study work on a project (drilling, geophysics, geochem, mapping, metallurgy, environmental baseline), one row each with project, type, phase, dates, metres, budget, spend, lead and rig. The left column chooses which phase group is listed (in the field = mobilising to demobilising, which is the default; in planning = draft to approved; complete; all). The type filter narrows by programme type. Column headers sort. New programme starts the create form.",
+   "not_here": "Changing a programme's phase, crew, logistics or approval: that programme's own page (its id or name in the row). A timeline of all programmes is Schedule; contracted rigs, camps and every crew rotation across the tenant have their own pages under Resources in the left column. Drillhole detail lives in Drilling; approval decisions are taken in Approvals.",
+   "leads_to": {
+    "New programme": "programmes-new",
+    "Programme id or name in a row": "programme-overview",
+    "Project name in a row": "project page (Projects area)",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const m=document.querySelector('main .head .meta'); if (!m) return null; const q=new URLSearchParams((location.hash.split('?')[1]||'')); const ct=document.querySelector('main .filters .ct'); return 'Programme list showing: ' + m.innerText.trim() + '; type filter: ' + (q.get('type')||'all types') + (ct ? '; ' + ct.innerText.trim() : '') })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ],
+   "virtual_controls_js": "(() => { const pills=document.querySelector('main .filters .pills'); if (!pills) return []; const q=new URLSearchParams((location.hash.split('?')[1]||'')); const types=[...pills.querySelectorAll('label')].map(l=>l.textContent.trim()); return [{id:'filter:type', label:'Type filter', row_label:'Type', region:'Programme list, filter bar above the table', what:'Narrows the programme list to one programme type. Write one of: ' + types.join(', ') + ', or \"all\" to clear the type filter. This field sets the type pills.', not_for:'Choosing which phase group is listed (in the field, in planning, complete, all), which is the left column; changing the type of a programme.', current_value:q.get('type')||'all', set:'(v) => { const pills=document.querySelector(\"main .filters .pills\"); if (!pills) return false; const want=String(v).trim().toLowerCase(); const labels=[...pills.querySelectorAll(\"label\")]; const cur=new URLSearchParams((location.hash.split(\"?\")[1]||\"\")).get(\"type\"); if ([\"all\",\"any\",\"none\",\"\",\"clear\"].includes(want)) { if (!cur) return true; const a=labels.find(l=>l.textContent.trim()===cur); if (!a) return false; a.click(); return true; } const hit=labels.find(l=>l.textContent.trim().toLowerCase()===want); if (!hit) return false; if (cur===hit.textContent.trim()) return true; hit.click(); return true; }'}]; })()"
+  },
+  {
+   "id": "programmes-new",
+   "match": {
+    "url_regex": "#/programmes/new(\\?[^#]*)?$"
+   },
+   "name": "New programme form",
+   "what": "Creates a programme as a draft: project, type, name, objective, start and end dates, budget, and for drilling programmes planned metres, planned holes and an optional rig. Create draft validates the form and, if it passes, opens the new programme's page. Errors are shown under the fields, and the form stays open for correction.",
+   "not_here": "Scoping, costing and submitting for approval: later steps on the programme's own page. Crew and logistics: the programme page, once it exists. The Start and End date fields are offered as their own fill targets.",
+   "leads_to": {
+    "Create draft (valid form)": "programme-overview",
+    "Cancel": "programmes-list",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const root=document.querySelector(\"main form\"); if (!root) return null; const parts=[...root.querySelectorAll('label.field')].map(l=>{ const name=(l.querySelector('span')?.textContent||'').trim(); const c=l.querySelector('input,select,textarea'); if (!c || !name) return null; const v=c.tagName==='SELECT' ? (c.selectedOptions[0]?.textContent||'').trim() : c.value; const err=l.querySelector('.error')?.textContent.trim(); return name + ' = ' + (v==='' ? '(empty)' : JSON.stringify(v)) + (c.required ? ' (required)' : '') + (err ? ' [invalid: ' + err + ']' : ''); }).filter(Boolean); const notice=[...root.querySelectorAll('.notice')].map(n=>n.innerText.trim()).filter(Boolean); return 'New programme form: ' + parts.join('; ') + (notice.length ? '. Refused: ' + notice.join(' ') : '') })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ],
+   "virtual_controls_js": "(() => { const root=document.querySelector(\"main form\"); if (!root) return []; const spec=[{\"field\": \"Start\", \"region\": \"New programme form\", \"what\": \"The programme's planned start date (YYYY-MM-DD).\", \"not_for\": \"The end date, which is its own field.\"}, {\"field\": \"End\", \"region\": \"New programme form\", \"what\": \"The programme's planned end date (YYYY-MM-DD).\", \"not_for\": \"The start date, which is its own field.\"}]; const out=[]; for (const s of spec) {  const l=[...root.querySelectorAll('label.field')].find(x=>(x.querySelector('span')?.textContent||'').trim()===s.field);  const i=l && l.querySelector('input[type=date]'); if (!i) continue;  out.push({id:'date:'+s.field, label:s.field, row_label:s.field, region:s.region, what:s.what, not_for:s.not_for,   current_value:i.value,   set:'(v) => { const root=document.querySelector('+JSON.stringify(\"main form\")+'); if (!root) return false; const l=[...root.querySelectorAll(\"label.field\")].find(x=>(x.querySelector(\"span\")?.textContent||\"\").trim()==='+JSON.stringify(s.field)+'); const i=l && l.querySelector(\"input[type=date]\"); if (!i) return false; let t=String(v).trim(); if (!/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(t)) { const d=new Date(t); if (isNaN(d)) return false; t=d.getFullYear()+\"-\"+String(d.getMonth()+1).padStart(2,\"0\")+\"-\"+String(d.getDate()).padStart(2,\"0\"); } const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,\"value\").set; setter.call(i,t); i.dispatchEvent(new Event(\"input\",{bubbles:true})); i.dispatchEvent(new Event(\"change\",{bubbles:true})); return i.value===t; }'}); } return out; })()"
+  },
+  {
+   "id": "programmes-schedule",
+   "match": {
+    "url_regex": "#/programmes/schedule(\\?[^#]*)?$"
+   },
+   "name": "Programme schedule",
+   "what": "A read-only timeline (Gantt) of programmes across a fixed window of months, one bar per programme, coloured as in the field, complete or planned, with today marked. Each programme's label is a link to its page.",
+   "not_here": "Programme dates: set on the programme itself. A sortable table of programmes: the Programmes list. Crew dates: Crew rotations.",
+   "leads_to": {
+    "Programme label on a bar": "programme-overview",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programmes-rigs",
+   "match": {
+    "url_regex": "#/programmes/rigs(\\?[^#]*)?$"
+   },
+   "name": "Rigs",
+   "what": "The contracted drill rigs: id, name, contractor, rig type, depth capacity, day rate, status (available, assigned, maintenance, demobilised), the programme it is on and its location. Logistics staff see an Update button per row to change a rig's status and location.",
+   "not_here": "Attaching a rig to a drilling programme: the Rig field of New programme, when that programme is created. Camps and crew have their own pages in the left column.",
+   "leads_to": {
+    "Programme name in a row": "programme-overview",
+    "Update (row)": "programmes-rig-update-dialog",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programmes-camps",
+   "match": {
+    "url_regex": "#/programmes/camps(\\?[^#]*)?$"
+   },
+   "name": "Camps",
+   "what": "Read-only list of field camps: id, name, project, status (open, closed, winterised), beds, beds occupied, whether a medic is on site, and how the camp is reached.",
+   "not_here": "Camp services for a programme (catering, housekeeping and the like) are logistics items on that programme's Logistics tab. Who is staying is set by crew assignments on the programme's Crew tab.",
+   "leads_to": {
+    "Project name in a row": "project page (Projects area)",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programmes-crew-rotations",
+   "match": {
+    "url_regex": "#/programmes/crew(\\?[^#]*)?$"
+   },
+   "name": "Crew rotations",
+   "what": "Every crew assignment across the tenant: person, role, programme, project, rotation from and to, and state (upcoming, on site, ended), with a count of rotations ending soon. Paged, sortable, read-only.",
+   "not_here": "Assigning or removing crew: a programme's own Crew tab (or its Assign crew button).",
+   "leads_to": {
+    "Programme name in a row": "programme-overview",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programme-overview",
+   "match": {
+    "url_regex": "#/programmes/(?!(new|schedule|rigs|camps|crew)(\\?|/|$))[^/?#]+(\\?[^#]*)?$"
+   },
+   "name": "Programme page, Overview tab",
+   "what": "One programme. The header shows its name and id, project, commodity, phase, type and dates, and the actions open to you: Move to <next phase> (advances the phase one step, after a confirmation), Submit for approval (only at costed with no approval yet; raises the programme-approval workflow and needs no confirmation), and Assign crew. Which actions appear depends on the signed-in user's role and the programme's phase. Overview shows budget and spend, metres, duration, crew on site and logistics cost; objective, lead, rig, camp and approval; the phase track; and comments.",
+   "not_here": "Crew assignments, logistics items, drillholes and the approval steps: each on its own tab. Approving or rejecting the approval request: the Approvals section. The programme's name, dates and budget: shown in the header and summary; its phase changes with Move to in the header.",
+   "leads_to": {
+    "Overview tab": "programme-overview",
+    "Crew tab": "programme-crew",
+    "Logistics tab": "programme-logistics",
+    "Drillholes tab": "programme-holes",
+    "Approval tab": "programme-approval",
+    "Move to <next phase> (header)": "programme-move-dialog",
+    "Assign crew (header)": "programme-assign-crew-dialog",
+    "Project name under the title": "project page (Projects area)",
+    "Rig link": "programmes-rigs",
+    "Camp link": "programmes-camps",
+    "Approval link": "approval request (Approvals area)",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if (!h) return null; const id=h.querySelector('.id')?.textContent.trim()||''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const phase=document.querySelector('main .head .chip[data-status]')?.textContent.trim()||'?'; const meta=[...document.querySelectorAll('main .head .meta > span:not(.chip)')].map(s=>s.textContent.trim()).filter(Boolean); const acts=[...document.querySelectorAll('main .head .actions button')].map(b=>b.textContent.trim().replace(/\\s+/g,' ')); const tab=document.querySelector('main nav.tabs a[aria-current=page]'); return 'Programme in view: ' + id + ' ' + name + ' | phase: ' + phase + ' | ' + meta.join(' | ') + ' | header actions: ' + (acts.length ? 'offered to you: ' + acts.join(', ') : 'shown according to the signed-in role and the programme phase; to act with another role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)') + (tab ? ' | tab: ' + tab.firstChild.textContent.trim() : '') })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programme-crew",
+   "match": {
+    "url_regex": "#/programmes/(?!(new|schedule|rigs|camps|crew)(\\?|/|$))[^/?#]+/crew(\\?[^#]*)?$"
+   },
+   "name": "Programme page, Crew tab",
+   "what": "The programme's crew assignments: person, role on this programme, rotation from and to, days, and state (upcoming, on site, ended). Assign crew adds a person for a rotation; Remove on a row deletes that assignment at once.",
+   "not_here": "Crew across all programmes is Crew rotations in the left column. Camp beds are on Camps.",
+   "leads_to": {
+    "Overview tab": "programme-overview",
+    "Crew tab": "programme-crew",
+    "Logistics tab": "programme-logistics",
+    "Drillholes tab": "programme-holes",
+    "Approval tab": "programme-approval",
+    "Move to <next phase> (header)": "programme-move-dialog",
+    "Assign crew (header)": "programme-assign-crew-dialog",
+    "Project name under the title": "project page (Projects area)",
+    "Assign crew (tab)": "programme-assign-crew-dialog",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if (!h) return null; const id=h.querySelector('.id')?.textContent.trim()||''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const phase=document.querySelector('main .head .chip[data-status]')?.textContent.trim()||'?'; const meta=[...document.querySelectorAll('main .head .meta > span:not(.chip)')].map(s=>s.textContent.trim()).filter(Boolean); const acts=[...document.querySelectorAll('main .head .actions button')].map(b=>b.textContent.trim().replace(/\\s+/g,' ')); const tab=document.querySelector('main nav.tabs a[aria-current=page]'); return 'Programme in view: ' + id + ' ' + name + ' | phase: ' + phase + ' | ' + meta.join(' | ') + ' | header actions: ' + (acts.length ? 'offered to you: ' + acts.join(', ') : 'shown according to the signed-in role and the programme phase; to act with another role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)') + (tab ? ' | tab: ' + tab.firstChild.textContent.trim() : '') })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programme-logistics",
+   "match": {
+    "url_regex": "#/programmes/(?!(new|schedule|rigs|camps|crew)(\\?|/|$))[^/?#]+/logistics(\\?[^#]*)?$"
+   },
+   "name": "Programme page, Logistics tab",
+   "what": "The programme's logistics items: charters, camp services, fuel, permits, equipment, medical cover and freight, each with supplier, scheduled date, cost and status (requested, booked, confirmed, delivered, cancelled). Add item creates one; Edit on a row changes one.",
+   "not_here": "Purchase orders above the delegated limit are approved in Approvals. Rigs and camps themselves are listed under Resources in the left column.",
+   "leads_to": {
+    "Overview tab": "programme-overview",
+    "Crew tab": "programme-crew",
+    "Logistics tab": "programme-logistics",
+    "Drillholes tab": "programme-holes",
+    "Approval tab": "programme-approval",
+    "Move to <next phase> (header)": "programme-move-dialog",
+    "Assign crew (header)": "programme-assign-crew-dialog",
+    "Project name under the title": "project page (Projects area)",
+    "Add item / Edit (row)": "programme-logistics-item-dialog",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if (!h) return null; const id=h.querySelector('.id')?.textContent.trim()||''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const phase=document.querySelector('main .head .chip[data-status]')?.textContent.trim()||'?'; const meta=[...document.querySelectorAll('main .head .meta > span:not(.chip)')].map(s=>s.textContent.trim()).filter(Boolean); const acts=[...document.querySelectorAll('main .head .actions button')].map(b=>b.textContent.trim().replace(/\\s+/g,' ')); const tab=document.querySelector('main nav.tabs a[aria-current=page]'); return 'Programme in view: ' + id + ' ' + name + ' | phase: ' + phase + ' | ' + meta.join(' | ') + ' | header actions: ' + (acts.length ? 'offered to you: ' + acts.join(', ') : 'shown according to the signed-in role and the programme phase; to act with another role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)') + (tab ? ' | tab: ' + tab.firstChild.textContent.trim() : '') })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programme-holes",
+   "match": {
+    "url_regex": "#/programmes/(?!(new|schedule|rigs|camps|crew)(\\?|/|$))[^/?#]+/holes(\\?[^#]*)?$"
+   },
+   "name": "Programme page, Drillholes tab",
+   "what": "Read-only table of the drillholes in this programme: hole id, project, programme, hole type, status, collar coordinates, azimuth, dip, planned and actual depth, best intercept and completion date.",
+   "not_here": "Logging, sampling and hole detail: the Drilling area (each hole id leads there). Assay results: Assays.",
+   "leads_to": {
+    "Overview tab": "programme-overview",
+    "Crew tab": "programme-crew",
+    "Logistics tab": "programme-logistics",
+    "Drillholes tab": "programme-holes",
+    "Approval tab": "programme-approval",
+    "Move to <next phase> (header)": "programme-move-dialog",
+    "Assign crew (header)": "programme-assign-crew-dialog",
+    "Project name under the title": "project page (Projects area)",
+    "Hole id in a row": "drillhole page (Drilling area)",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if (!h) return null; const id=h.querySelector('.id')?.textContent.trim()||''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const phase=document.querySelector('main .head .chip[data-status]')?.textContent.trim()||'?'; const meta=[...document.querySelectorAll('main .head .meta > span:not(.chip)')].map(s=>s.textContent.trim()).filter(Boolean); const acts=[...document.querySelectorAll('main .head .actions button')].map(b=>b.textContent.trim().replace(/\\s+/g,' ')); const tab=document.querySelector('main nav.tabs a[aria-current=page]'); return 'Programme in view: ' + id + ' ' + name + ' | phase: ' + phase + ' | ' + meta.join(' | ') + ' | header actions: ' + (acts.length ? 'offered to you: ' + acts.join(', ') : 'shown according to the signed-in role and the programme phase; to act with another role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)') + (tab ? ' | tab: ' + tab.firstChild.textContent.trim() : '') })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programme-approval",
+   "match": {
+    "url_regex": "#/programmes/(?!(new|schedule|rigs|camps|crew)(\\?|/|$))[^/?#]+/approval(\\?[^#]*)?$"
+   },
+   "name": "Programme page, Approval tab",
+   "what": "The programme-approval workflow for this programme, read-only: its status and the three steps (Technical review, Budget check, Manager approval) with who holds each and when it was decided or is due. Says so when the programme has not been submitted.",
+   "not_here": "Submitting: Submit for approval in the header (at costed). Deciding a step: the Approvals section, reached through the request id link.",
+   "leads_to": {
+    "Overview tab": "programme-overview",
+    "Crew tab": "programme-crew",
+    "Logistics tab": "programme-logistics",
+    "Drillholes tab": "programme-holes",
+    "Approval tab": "programme-approval",
+    "Move to <next phase> (header)": "programme-move-dialog",
+    "Assign crew (header)": "programme-assign-crew-dialog",
+    "Project name under the title": "project page (Projects area)",
+    "Approval request id": "approval request (Approvals area)",
+    "In the field / In planning / Complete / All programmes (left column)": "programmes-list",
+    "Schedule (left column)": "programmes-schedule",
+    "Rigs (left column)": "programmes-rigs",
+    "Camps (left column)": "programmes-camps",
+    "Crew rotations (left column)": "programmes-crew-rotations"
+   },
+   "facts_js": [
+    "(() => { const h=document.querySelector('main .head h1'); if (!h) return null; const id=h.querySelector('.id')?.textContent.trim()||''; const name=[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim(); const phase=document.querySelector('main .head .chip[data-status]')?.textContent.trim()||'?'; const meta=[...document.querySelectorAll('main .head .meta > span:not(.chip)')].map(s=>s.textContent.trim()).filter(Boolean); const acts=[...document.querySelectorAll('main .head .actions button')].map(b=>b.textContent.trim().replace(/\\s+/g,' ')); const tab=document.querySelector('main nav.tabs a[aria-current=page]'); return 'Programme in view: ' + id + ' ' + name + ' | phase: ' + phase + ' | ' + meta.join(' | ') + ' | header actions: ' + (acts.length ? 'offered to you: ' + acts.join(', ') : 'shown according to the signed-in role and the programme phase; to act with another role, switch user in the account menu to a person who holds it (People and roles lists who holds each role)') + (tab ? ' | tab: ' + tab.firstChild.textContent.trim() : '') })()",
+    "(() => { const t=[...document.querySelectorAll('.toasts .toast')].map(x=>x.innerText.trim().replace(/\\s+/g,' ')).filter(Boolean); return t.length ? 'Notice on screen: ' + t.join(' | ') : null })()"
+   ]
+  },
+  {
+   "id": "programme-move-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label^=\"Move PRG-\"]"
+   },
+   "name": "Move programme to next phase (confirmation)",
+   "what": "Confirms moving this programme one phase forward, stating from which phase to which. Confirm applies it at once; moving to complete also closes the programme's ledger.",
+   "not_here": "Phases advance one step at a time, to the phase named in the dialog. Costed to approved: automatic when the approval workflow passes.",
+   "facts_js": [
+    "(() => { const d=document.querySelector('dialog[open][aria-label^=\"Move PRG-\"]'); if (!d) return null; return 'Dialog says: ' + d.innerText.replace(/\\s+/g,' ').replace(/Cancel Confirm$/,'').trim() })()"
+   ]
+  },
+  {
+   "id": "programme-assign-crew-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label^=\"Assign crew\"]"
+   },
+   "name": "Assign crew dialog",
+   "what": "Adds one person to this programme's crew for one rotation: person, role on this programme (filled from the person's usual role, editable), rotation start and end dates (pre-filled). Assign saves it and closes the dialog. ADIT refuses an assignment that overlaps the same person's rotation on another live programme and says which one, leaving the dialog open.",
+   "not_here": "Removing an assignment: Remove on its Crew tab row. The rotation dates are offered as their own fill targets.",
+   "facts_js": [
+    "(() => { const root=document.querySelector(\"dialog[open][aria-label^=\\\"Assign crew\\\"]\"); if (!root) return null; const parts=[...root.querySelectorAll('label.field')].map(l=>{ const name=(l.querySelector('span')?.textContent||'').trim(); const c=l.querySelector('input,select,textarea'); if (!c || !name) return null; const v=c.tagName==='SELECT' ? (c.selectedOptions[0]?.textContent||'').trim() : c.value; const err=l.querySelector('.error')?.textContent.trim(); return name + ' = ' + (v==='' ? '(empty)' : JSON.stringify(v)) + (c.required ? ' (required)' : '') + (err ? ' [invalid: ' + err + ']' : ''); }).filter(Boolean); const notice=[...root.querySelectorAll('.notice')].map(n=>n.innerText.trim()).filter(Boolean); return 'Assign crew form: ' + parts.join('; ') + (notice.length ? '. Refused: ' + notice.join(' ') : '') })()"
+   ],
+   "virtual_controls_js": "(() => { const root=document.querySelector(\"dialog[open][aria-label^=\\\"Assign crew\\\"]\"); if (!root) return []; const spec=[{\"field\": \"Rotation start\", \"region\": \"Assign crew dialog\", \"what\": \"First day of this person's rotation on the programme (YYYY-MM-DD).\", \"not_for\": \"The last day, which is Rotation end.\"}, {\"field\": \"Rotation end\", \"region\": \"Assign crew dialog\", \"what\": \"Last day of this person's rotation on the programme (YYYY-MM-DD).\", \"not_for\": \"The first day, which is Rotation start.\"}]; const out=[]; for (const s of spec) {  const l=[...root.querySelectorAll('label.field')].find(x=>(x.querySelector('span')?.textContent||'').trim()===s.field);  const i=l && l.querySelector('input[type=date]'); if (!i) continue;  out.push({id:'date:'+s.field, label:s.field, row_label:s.field, region:s.region, what:s.what, not_for:s.not_for,   current_value:i.value,   set:'(v) => { const root=document.querySelector('+JSON.stringify(\"dialog[open][aria-label^=\\\"Assign crew\\\"]\")+'); if (!root) return false; const l=[...root.querySelectorAll(\"label.field\")].find(x=>(x.querySelector(\"span\")?.textContent||\"\").trim()==='+JSON.stringify(s.field)+'); const i=l && l.querySelector(\"input[type=date]\"); if (!i) return false; let t=String(v).trim(); if (!/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(t)) { const d=new Date(t); if (isNaN(d)) return false; t=d.getFullYear()+\"-\"+String(d.getMonth()+1).padStart(2,\"0\")+\"-\"+String(d.getDate()).padStart(2,\"0\"); } const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,\"value\").set; setter.call(i,t); i.dispatchEvent(new Event(\"input\",{bubbles:true})); i.dispatchEvent(new Event(\"change\",{bubbles:true})); return i.value===t; }'}); } return out; })()"
+  },
+  {
+   "id": "programme-logistics-item-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label=\"Add a logistics item\"], dialog[open][aria-label^=\"Edit LG-\"]"
+   },
+   "name": "Logistics item dialog (add or edit)",
+   "what": "The form for one logistics item: kind, status, description (required), supplier, scheduled date and cost. Save stores it on this programme; in the Edit form it overwrites the item's current values.",
+   "not_here": "Dropping an item: its Status set to cancelled; the item stays on record. The Scheduled date is offered as its own fill target.",
+   "facts_js": [
+    "(() => { const root=document.querySelector(\"dialog[open][aria-label=\\\"Add a logistics item\\\"], dialog[open][aria-label^=\\\"Edit LG-\\\"]\"); if (!root) return null; const parts=[...root.querySelectorAll('label.field')].map(l=>{ const name=(l.querySelector('span')?.textContent||'').trim(); const c=l.querySelector('input,select,textarea'); if (!c || !name) return null; const v=c.tagName==='SELECT' ? (c.selectedOptions[0]?.textContent||'').trim() : c.value; const err=l.querySelector('.error')?.textContent.trim(); return name + ' = ' + (v==='' ? '(empty)' : JSON.stringify(v)) + (c.required ? ' (required)' : '') + (err ? ' [invalid: ' + err + ']' : ''); }).filter(Boolean); const notice=[...root.querySelectorAll('.notice')].map(n=>n.innerText.trim()).filter(Boolean); return 'Logistics item form: ' + parts.join('; ') + (notice.length ? '. Refused: ' + notice.join(' ') : '') })()"
+   ],
+   "virtual_controls_js": "(() => { const root=document.querySelector(\"dialog[open][aria-label=\\\"Add a logistics item\\\"], dialog[open][aria-label^=\\\"Edit LG-\\\"]\"); if (!root) return []; const spec=[{\"field\": \"Scheduled\", \"region\": \"Logistics item dialog\", \"what\": \"The date the item is scheduled for: flight, delivery, service start (YYYY-MM-DD).\", \"not_for\": \"The cost or status of the item, which are their own fields.\"}]; const out=[]; for (const s of spec) {  const l=[...root.querySelectorAll('label.field')].find(x=>(x.querySelector('span')?.textContent||'').trim()===s.field);  const i=l && l.querySelector('input[type=date]'); if (!i) continue;  out.push({id:'date:'+s.field, label:s.field, row_label:s.field, region:s.region, what:s.what, not_for:s.not_for,   current_value:i.value,   set:'(v) => { const root=document.querySelector('+JSON.stringify(\"dialog[open][aria-label=\\\"Add a logistics item\\\"], dialog[open][aria-label^=\\\"Edit LG-\\\"]\")+'); if (!root) return false; const l=[...root.querySelectorAll(\"label.field\")].find(x=>(x.querySelector(\"span\")?.textContent||\"\").trim()==='+JSON.stringify(s.field)+'); const i=l && l.querySelector(\"input[type=date]\"); if (!i) return false; let t=String(v).trim(); if (!/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/.test(t)) { const d=new Date(t); if (isNaN(d)) return false; t=d.getFullYear()+\"-\"+String(d.getMonth()+1).padStart(2,\"0\")+\"-\"+String(d.getDate()).padStart(2,\"0\"); } const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,\"value\").set; setter.call(i,t); i.dispatchEvent(new Event(\"input\",{bubbles:true})); i.dispatchEvent(new Event(\"change\",{bubbles:true})); return i.value===t; }'}); } return out; })()"
+  },
+  {
+   "id": "programmes-rig-update-dialog",
+   "layer": "overlay",
+   "match": {
+    "selector": "dialog[open][aria-label^=\"Update RIG-\"]"
+   },
+   "name": "Update rig dialog",
+   "what": "Changes one rig's status (available, assigned, maintenance, demobilised) and its location text. Save applies it.",
+   "not_here": "Which programme a rig is on: set by that programme when it is created. Contractor, capacity and day rate: shown on the Rigs list, outside this dialog.",
+   "facts_js": [
+    "(() => { const root=document.querySelector(\"dialog[open][aria-label^=\\\"Update RIG-\\\"]\"); if (!root) return null; const parts=[...root.querySelectorAll('label.field')].map(l=>{ const name=(l.querySelector('span')?.textContent||'').trim(); const c=l.querySelector('input,select,textarea'); if (!c || !name) return null; const v=c.tagName==='SELECT' ? (c.selectedOptions[0]?.textContent||'').trim() : c.value; const err=l.querySelector('.error')?.textContent.trim(); return name + ' = ' + (v==='' ? '(empty)' : JSON.stringify(v)) + (c.required ? ' (required)' : '') + (err ? ' [invalid: ' + err + ']' : ''); }).filter(Boolean); const notice=[...root.querySelectorAll('.notice')].map(n=>n.innerText.trim()).filter(Boolean); return 'Update rig form: ' + parts.join('; ') + (notice.length ? '. Refused: ' + notice.join(' ') : '') })()"
+   ]
+  }
+ ],
+ "controls": [
+  {
+   "key": {
+    "row_label": "Programmes",
+    "role": "link",
+    "text_regex": "^In the field\\b"
+   },
+   "region": "Programmes left column",
+   "what": "Lists programmes that are in the field: mobilising, in progress or demobilising. The count is how many.",
+   "not_for": "Planned or finished programmes (In planning, Complete, All programmes).",
+   "note": "Key uses the left-column group heading as row_label; the count in the text changes."
+  },
+  {
+   "key": {
+    "row_label": "Programmes",
+    "role": "link",
+    "text_regex": "^In planning\\b"
+   },
+   "region": "Programmes left column",
+   "what": "Lists programmes still being planned: draft, scoped, costed or approved.",
+   "not_for": "Programmes already in the field (In the field) or finished (Complete)."
+  },
+  {
+   "key": {
+    "row_label": "Programmes",
+    "role": "link",
+    "text_regex": "^Complete\\b"
+   },
+   "region": "Programmes left column",
+   "what": "Lists finished programmes whose ledger is closed.",
+   "not_for": "Moving a programme to complete; that is Move to complete on the programme page."
+  },
+  {
+   "key": {
+    "row_label": "Programmes",
+    "role": "link",
+    "text_regex": "^All programmes\\b"
+   },
+   "region": "Programmes left column",
+   "what": "Lists every programme in every phase, including cancelled ones.",
+   "not_for": "Creating a programme (New programme)."
+  },
+  {
+   "key": {
+    "row_label": "Resources",
+    "role": "link",
+    "text_regex": "^Schedule\\b"
+   },
+   "region": "Programmes left column",
+   "what": "Opens the timeline of all programmes.",
+   "not_for": "Crew rotation dates (Crew rotations)."
+  },
+  {
+   "key": {
+    "row_label": "Resources",
+    "role": "link",
+    "text_regex": "^Rigs\\b"
+   },
+   "region": "Programmes left column",
+   "what": "Opens the list of contracted drill rigs with status and the programme each is on.",
+   "not_for": "Camps or crew, which have their own entries."
+  },
+  {
+   "key": {
+    "row_label": "Resources",
+    "role": "link",
+    "text_regex": "^Camps\\b"
+   },
+   "region": "Programmes left column",
+   "what": "Opens the list of field camps with beds, occupancy and access.",
+   "not_for": "Camp service bookings, which are programme logistics items."
+  },
+  {
+   "key": {
+    "row_label": "Resources",
+    "role": "link",
+    "text_regex": "^Crew rotations\\b"
+   },
+   "region": "Programmes left column",
+   "what": "Opens every crew assignment across the tenant, soonest to end first.",
+   "not_for": "Assigning crew, which is done on a programme's page."
+  },
+  {
+   "key": {
+    "page": "programmes-list",
+    "role": "link",
+    "text": "New programme"
+   },
+   "region": "Programmes list header",
+   "what": "Opens the New programme form, which creates a programme as a draft.",
+   "not_for": "Opening or changing an existing programme (its row in the list)."
+  },
+  {
+   "key": {
+    "page": "programmes-list",
+    "role": "button",
+    "text_regex": "^Sort by "
+   },
+   "region": "Programmes list, table header",
+   "what": "Sorts the table by this column; a second press reverses the order.",
+   "not_for": "Filtering. Which programmes are listed is set by the left column and the type filter.",
+   "note": "One entry for every column-header sort button."
+  },
+  {
+   "key": {
+    "page": "programmes-list",
+    "role": "link",
+    "text_regex": "^PRG-\\d{4}-\\d{3}$"
+   },
+   "region": "Programmes list, table rows",
+   "what": "Opens this programme's page (Overview tab).",
+   "not_for": "Opening the project; that is the project name in the row.",
+   "note": "Pattern of programme ids, not any one programme."
+  },
+  {
+   "key": {
+    "page": "programmes-list",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Programmes list, table rows",
+   "what": "A record link in a row: the programme name opens that programme's page; the project name opens the project's page in Projects.",
+   "not_for": "Filtering the list by project (each project's own Programmes tab lists its programmes).",
+   "note": "Generic: programme-name and project-name links cannot be told apart by any DOM key (hash hrefs are dropped by the reader)."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "row_label": "Project"
+   },
+   "region": "New programme form",
+   "what": "The project this programme belongs to. Choose one from the list.",
+   "not_for": "The programme type (Type) or name (Name)."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "row_label": "Type"
+   },
+   "region": "New programme form",
+   "what": "The kind of work. Choosing drilling shows planned metres, planned holes and rig; other types do not need them.",
+   "not_for": "Phase; every new programme starts as a draft.",
+   "options": [
+    "drilling",
+    "geophysics",
+    "geochem",
+    "mapping",
+    "metallurgy",
+    "baseline"
+   ]
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "row_label": "Name"
+   },
+   "region": "New programme form",
+   "what": "The programme's name: phase, method and target, in free text. Required.",
+   "not_for": "The objective, which is a separate field."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "row_label": "Objective"
+   },
+   "region": "New programme form",
+   "what": "What the programme sets out to do; it is carried onto the approval request. Required.",
+   "not_for": "The name."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "row_label": "Budget, USD"
+   },
+   "region": "New programme form",
+   "what": "The programme budget, a number above zero. Required.",
+   "not_for": "Spend to date, which accrues from the programme ledger."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "row_label": "Planned metres"
+   },
+   "region": "New programme form",
+   "what": "Total metres planned to drill. Required for drilling programmes.",
+   "not_for": "The number of holes (Planned holes)."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "row_label": "Planned holes"
+   },
+   "region": "New programme form",
+   "what": "Number of holes planned. Drilling programmes only.",
+   "not_for": "Metres (Planned metres)."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "row_label": "Rig"
+   },
+   "region": "New programme form",
+   "what": "Optionally attaches a contracted rig to a drilling programme. Each option shows the rig's current status; unavailable ones are greyed out.",
+   "not_for": "Changing the rig's own status, which is Update on the Rigs page."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "role": "link",
+    "text": "Cancel"
+   },
+   "region": "New programme form",
+   "what": "Leaves the form without creating anything and returns to the Programmes list.",
+   "not_for": "Cancelling an existing programme."
+  },
+  {
+   "key": {
+    "page": "programmes-new",
+    "text": "Create draft"
+   },
+   "region": "New programme form",
+   "what": "Validates the form and, if every required field is filled, creates the programme as a draft and opens its page. With errors, it marks the fields and the form stays open.",
+   "not_for": "Submitting for approval, which is a later step on the programme page."
+  },
+  {
+   "key": {
+    "page": "programmes-rigs",
+    "role": "button",
+    "text_regex": "^Sort by "
+   },
+   "region": "Rigs table header",
+   "what": "Sorts the rig table by this column; again to reverse.",
+   "not_for": "Filtering."
+  },
+  {
+   "key": {
+    "page": "programmes-rigs",
+    "role": "button",
+    "text": "Update"
+   },
+   "region": "Rigs table, row actions",
+   "what": "Opens the Update rig dialog for this row's rig (status and location).",
+   "not_for": "Attaching the rig to a programme, which is done when the programme is created.",
+   "note": "Shown only to users with logistics rights."
+  },
+  {
+   "key": {
+    "page": "programmes-rigs",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Rigs table, Programme column",
+   "what": "Opens the programme this rig is on.",
+   "not_for": "The rig itself, whose details are on this list."
+  },
+  {
+   "key": {
+    "page": "programmes-camps",
+    "role": "button",
+    "text_regex": "^Sort by "
+   },
+   "region": "Camps table header",
+   "what": "Sorts the camp table by this column; again to reverse.",
+   "not_for": "Filtering."
+  },
+  {
+   "key": {
+    "page": "programmes-camps",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Camps table, Project column",
+   "what": "Opens the project the camp serves (Projects area).",
+   "not_for": "The camp itself, whose details are on this list."
+  },
+  {
+   "key": {
+    "page": "programmes-crew-rotations",
+    "role": "button",
+    "text_regex": "^Sort by "
+   },
+   "region": "Crew rotations table header",
+   "what": "Sorts the rotations by this column; again to reverse.",
+   "not_for": "Filtering."
+  },
+  {
+   "key": {
+    "page": "programmes-crew-rotations",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Crew rotations table, Programme column",
+   "what": "Opens the programme this rotation belongs to, where crew can be assigned or removed.",
+   "not_for": "Editing the rotation (the programme's Crew tab)."
+  },
+  {
+   "key": {
+    "page": "programmes-crew-rotations",
+    "role": "button",
+    "text": "First"
+   },
+   "region": "Crew rotations table, pager below the table",
+   "what": "Shows the first page of rotations.",
+   "not_for": "Sorting or filtering the rotations."
+  },
+  {
+   "key": {
+    "page": "programmes-crew-rotations",
+    "role": "button",
+    "text": "Previous"
+   },
+   "region": "Crew rotations table, pager below the table",
+   "what": "Shows the previous page of rotations.",
+   "not_for": "Sorting or filtering the rotations."
+  },
+  {
+   "key": {
+    "page": "programmes-crew-rotations",
+    "role": "button",
+    "text": "Next"
+   },
+   "region": "Crew rotations table, pager below the table",
+   "what": "Shows the next page of rotations.",
+   "not_for": "Sorting or filtering the rotations."
+  },
+  {
+   "key": {
+    "page": "programmes-crew-rotations",
+    "role": "button",
+    "text": "Last"
+   },
+   "region": "Crew rotations table, pager below the table",
+   "what": "Shows the last page of rotations.",
+   "not_for": "Sorting or filtering the rotations."
+  },
+  {
+   "key": {
+    "page": "programmes-schedule",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Programme schedule, timeline rows",
+   "what": "Opens this programme's page.",
+   "not_for": "Changing the programme's dates (set on the programme)."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "button",
+    "text_regex": "^Move to\\s+"
+   },
+   "region": "Programme page header",
+   "what": "Advances this programme one phase, to the phase named on the button, after a confirmation dialog.",
+   "not_for": "Submitting for approval (Submit for approval at costed) or skipping phases; costed to approved happens by itself when the approval passes."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "button",
+    "text": "Submit for approval"
+   },
+   "region": "Programme page header",
+   "what": "Raises the programme-approval request (Technical review, Budget check, Manager approval) immediately, with no confirmation. Offered only at costed with no request yet.",
+   "not_for": "Approving it; approvers act in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "button",
+    "text": "Assign crew"
+   },
+   "region": "Programme page header (also on the Crew tab)",
+   "what": "Opens the Assign crew dialog to add a person to this programme for a rotation.",
+   "not_for": "Removing crew (Remove on the Crew tab) or seeing all rotations (Crew rotations)."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the programme summary, objective, phase track and comments.",
+   "not_for": "Crew, logistics, holes or approval, which are their own tabs."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "link",
+    "text_regex": "^Crew \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's crew assignments. The number is how many.",
+   "not_for": "All rotations across programmes (Crew rotations in the left column)."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "link",
+    "text_regex": "^Logistics \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's logistics items. The number is how many.",
+   "not_for": "Rigs or camps lists."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "link",
+    "text_regex": "^Drillholes \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the drillholes in this programme. The number is how many.",
+   "not_for": "The Drilling area's full hole register."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "link",
+    "text": "Approval"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's approval workflow and its steps.",
+   "not_for": "Deciding an approval step, which is done in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Programme page links",
+   "what": "A link to a related record: the project name under the title opens the project; in tables, a programme or project link opens that record.",
+   "not_for": "Changing the programme itself.",
+   "note": "Generic fallback for record links on the programme page; more specific entries win."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "button",
+    "text_regex": "^Move to\\s+"
+   },
+   "region": "Programme page header",
+   "what": "Advances this programme one phase, to the phase named on the button, after a confirmation dialog.",
+   "not_for": "Submitting for approval (Submit for approval at costed) or skipping phases; costed to approved happens by itself when the approval passes."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "button",
+    "text": "Submit for approval"
+   },
+   "region": "Programme page header",
+   "what": "Raises the programme-approval request (Technical review, Budget check, Manager approval) immediately, with no confirmation. Offered only at costed with no request yet.",
+   "not_for": "Approving it; approvers act in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "button",
+    "text": "Assign crew"
+   },
+   "region": "Programme page header (also on the Crew tab)",
+   "what": "Opens the Assign crew dialog to add a person to this programme for a rotation.",
+   "not_for": "Removing crew (Remove on the Crew tab) or seeing all rotations (Crew rotations)."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the programme summary, objective, phase track and comments.",
+   "not_for": "Crew, logistics, holes or approval, which are their own tabs."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "link",
+    "text_regex": "^Crew \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's crew assignments. The number is how many.",
+   "not_for": "All rotations across programmes (Crew rotations in the left column)."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "link",
+    "text_regex": "^Logistics \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's logistics items. The number is how many.",
+   "not_for": "Rigs or camps lists."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "link",
+    "text_regex": "^Drillholes \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the drillholes in this programme. The number is how many.",
+   "not_for": "The Drilling area's full hole register."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "link",
+    "text": "Approval"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's approval workflow and its steps.",
+   "not_for": "Deciding an approval step, which is done in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Programme page links",
+   "what": "A link to a related record: the project name under the title opens the project; in tables, a programme or project link opens that record.",
+   "not_for": "Changing the programme itself.",
+   "note": "Generic fallback for record links on the programme page; more specific entries win."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "button",
+    "text_regex": "^Move to\\s+"
+   },
+   "region": "Programme page header",
+   "what": "Advances this programme one phase, to the phase named on the button, after a confirmation dialog.",
+   "not_for": "Submitting for approval (Submit for approval at costed) or skipping phases; costed to approved happens by itself when the approval passes."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "button",
+    "text": "Submit for approval"
+   },
+   "region": "Programme page header",
+   "what": "Raises the programme-approval request (Technical review, Budget check, Manager approval) immediately, with no confirmation. Offered only at costed with no request yet.",
+   "not_for": "Approving it; approvers act in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "button",
+    "text": "Assign crew"
+   },
+   "region": "Programme page header (also on the Crew tab)",
+   "what": "Opens the Assign crew dialog to add a person to this programme for a rotation.",
+   "not_for": "Removing crew (Remove on the Crew tab) or seeing all rotations (Crew rotations)."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the programme summary, objective, phase track and comments.",
+   "not_for": "Crew, logistics, holes or approval, which are their own tabs."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "link",
+    "text_regex": "^Crew \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's crew assignments. The number is how many.",
+   "not_for": "All rotations across programmes (Crew rotations in the left column)."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "link",
+    "text_regex": "^Logistics \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's logistics items. The number is how many.",
+   "not_for": "Rigs or camps lists."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "link",
+    "text_regex": "^Drillholes \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the drillholes in this programme. The number is how many.",
+   "not_for": "The Drilling area's full hole register."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "link",
+    "text": "Approval"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's approval workflow and its steps.",
+   "not_for": "Deciding an approval step, which is done in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Programme page links",
+   "what": "A link to a related record: the project name under the title opens the project; in tables, a programme or project link opens that record.",
+   "not_for": "Changing the programme itself.",
+   "note": "Generic fallback for record links on the programme page; more specific entries win."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "button",
+    "text_regex": "^Move to\\s+"
+   },
+   "region": "Programme page header",
+   "what": "Advances this programme one phase, to the phase named on the button, after a confirmation dialog.",
+   "not_for": "Submitting for approval (Submit for approval at costed) or skipping phases; costed to approved happens by itself when the approval passes."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "button",
+    "text": "Submit for approval"
+   },
+   "region": "Programme page header",
+   "what": "Raises the programme-approval request (Technical review, Budget check, Manager approval) immediately, with no confirmation. Offered only at costed with no request yet.",
+   "not_for": "Approving it; approvers act in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "button",
+    "text": "Assign crew"
+   },
+   "region": "Programme page header (also on the Crew tab)",
+   "what": "Opens the Assign crew dialog to add a person to this programme for a rotation.",
+   "not_for": "Removing crew (Remove on the Crew tab) or seeing all rotations (Crew rotations)."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the programme summary, objective, phase track and comments.",
+   "not_for": "Crew, logistics, holes or approval, which are their own tabs."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "link",
+    "text_regex": "^Crew \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's crew assignments. The number is how many.",
+   "not_for": "All rotations across programmes (Crew rotations in the left column)."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "link",
+    "text_regex": "^Logistics \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's logistics items. The number is how many.",
+   "not_for": "Rigs or camps lists."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "link",
+    "text_regex": "^Drillholes \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the drillholes in this programme. The number is how many.",
+   "not_for": "The Drilling area's full hole register."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "link",
+    "text": "Approval"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's approval workflow and its steps.",
+   "not_for": "Deciding an approval step, which is done in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Programme page links",
+   "what": "A link to a related record: the project name under the title opens the project; in tables, a programme or project link opens that record.",
+   "not_for": "Changing the programme itself.",
+   "note": "Generic fallback for record links on the programme page; more specific entries win."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "button",
+    "text_regex": "^Move to\\s+"
+   },
+   "region": "Programme page header",
+   "what": "Advances this programme one phase, to the phase named on the button, after a confirmation dialog.",
+   "not_for": "Submitting for approval (Submit for approval at costed) or skipping phases; costed to approved happens by itself when the approval passes."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "button",
+    "text": "Submit for approval"
+   },
+   "region": "Programme page header",
+   "what": "Raises the programme-approval request (Technical review, Budget check, Manager approval) immediately, with no confirmation. Offered only at costed with no request yet.",
+   "not_for": "Approving it; approvers act in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "button",
+    "text": "Assign crew"
+   },
+   "region": "Programme page header (also on the Crew tab)",
+   "what": "Opens the Assign crew dialog to add a person to this programme for a rotation.",
+   "not_for": "Removing crew (Remove on the Crew tab) or seeing all rotations (Crew rotations)."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "link",
+    "text": "Overview"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the programme summary, objective, phase track and comments.",
+   "not_for": "Crew, logistics, holes or approval, which are their own tabs."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "link",
+    "text_regex": "^Crew \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's crew assignments. The number is how many.",
+   "not_for": "All rotations across programmes (Crew rotations in the left column)."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "link",
+    "text_regex": "^Logistics \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's logistics items. The number is how many.",
+   "not_for": "Rigs or camps lists."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "link",
+    "text_regex": "^Drillholes \\d+$"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows the drillholes in this programme. The number is how many.",
+   "not_for": "The Drilling area's full hole register."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "link",
+    "text": "Approval"
+   },
+   "region": "Programme page tabs",
+   "what": "Shows this programme's approval workflow and its steps.",
+   "not_for": "Deciding an approval step, which is done in Approvals."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "link",
+    "text_regex": "^(?!(ADIT home|Portfolio|Projects|Programmes|Drilling|Assays|Resources|Approvals|Optimiser|Admin|User Manual|In the field|In planning|Complete|All programmes|Schedule|Rigs|Camps|Crew rotations|Overview|Crew|Logistics|Drillholes|Approval|Cancel|Open|Skip to content)\\b)(?!PRG-\\d)(?!RIG-)(?!WF-\\d)(?![A-Z]{2,4}-[A-Z]{2,4}-\\d)"
+   },
+   "region": "Programme page links",
+   "what": "A link to a related record: the project name under the title opens the project; in tables, a programme or project link opens that record.",
+   "not_for": "Changing the programme itself.",
+   "note": "Generic fallback for record links on the programme page; more specific entries win."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "button",
+    "text_regex": "^read from the programme ledger"
+   },
+   "region": "Overview, summary strip",
+   "what": "A provenance note saying where the summary figures come from; the figures stay as shown.",
+   "not_for": "Refreshing or recalculating the figures."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "link",
+    "text_regex": "^RIG-"
+   },
+   "region": "Overview, details panel (Rig)",
+   "what": "Opens the Rigs list, where this programme's rig appears.",
+   "not_for": "Changing the rig on the programme."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "link",
+    "text_regex": "^WF-\\d{4}-\\d{4}"
+   },
+   "region": "Overview, details panel (Approval)",
+   "what": "Opens the programme's approval request in Approvals, where its steps are decided. The word after the id is the request's status.",
+   "not_for": "Submitting for approval (header button)."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "textbox",
+    "row_label": "Add a comment"
+   },
+   "region": "Overview, Comments panel",
+   "what": "Free-text comment on this programme, posted with Post comment and visible to everyone who opens it.",
+   "not_for": "Changing the objective or any programme field."
+  },
+  {
+   "key": {
+    "page": "programme-overview",
+    "role": "button",
+    "text": "Post comment"
+   },
+   "region": "Overview, Comments panel",
+   "what": "Posts the text in Add a comment to this programme's comments. Disabled while the box is empty.",
+   "not_for": "Notifying a specific person or approving anything."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "button",
+    "text_regex": "^Sort by "
+   },
+   "region": "Crew tab, table header",
+   "what": "Sorts the assignments by this column; again to reverse.",
+   "not_for": "Filtering."
+  },
+  {
+   "key": {
+    "page": "programme-crew",
+    "role": "button",
+    "text": "Remove"
+   },
+   "region": "Crew tab, row actions",
+   "what": "Deletes this row's crew assignment immediately, without a confirmation step.",
+   "not_for": "Ending a rotation early while keeping its record.",
+   "note": "Row identity is the person name in row_label."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "button",
+    "text_regex": "^Sort by "
+   },
+   "region": "Logistics tab, table header",
+   "what": "Sorts the items by this column; again to reverse.",
+   "not_for": "Filtering."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "button",
+    "text": "Add item"
+   },
+   "region": "Logistics tab, above the table",
+   "what": "Opens the empty logistics item form to add a new item to this programme.",
+   "not_for": "Changing an existing item (Edit on its row)."
+  },
+  {
+   "key": {
+    "page": "programme-logistics",
+    "role": "button",
+    "text": "Edit"
+   },
+   "region": "Logistics tab, row actions",
+   "what": "Opens this row's item in the edit form.",
+   "not_for": "Adding a new item (Add item). Dropping an item is Status = cancelled in this form.",
+   "note": "Row identity is the item id in row_label."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "button",
+    "text_regex": "^Sort by "
+   },
+   "region": "Drillholes tab, table header",
+   "what": "Sorts the holes by this column; again to reverse.",
+   "not_for": "Filtering."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "link",
+    "text_regex": "^[A-Z]{2,4}-[A-Z]{2,4}-\\d+$"
+   },
+   "region": "Drillholes tab, Hole column",
+   "what": "Opens this drillhole's page (Drilling).",
+   "not_for": "Opening the programme or project (their own links in the row).",
+   "note": "Pattern of hole ids (project code, hole type, number)."
+  },
+  {
+   "key": {
+    "page": "programme-holes",
+    "role": "link",
+    "text_regex": "^PRG-\\d{4}-\\d{3}$"
+   },
+   "region": "Drillholes tab, Programme column",
+   "what": "The programme in view.",
+   "not_for": "Opening the hole."
+  },
+  {
+   "key": {
+    "page": "programme-approval",
+    "role": "link",
+    "text_regex": "^WF-\\d{4}-\\d{4}"
+   },
+   "region": "Approval tab",
+   "what": "Opens this approval request in Approvals, where each step is approved or rejected.",
+   "not_for": "Submitting a new request."
+  },
+  {
+   "key": {
+    "page": "programme-move-dialog",
+    "text": "Confirm"
+   },
+   "region": "Move phase confirmation dialog",
+   "what": "Moves the programme to the phase named in the dialog and closes it.",
+   "not_for": "A phase other than the one named in the dialog."
+  },
+  {
+   "key": {
+    "page": "programme-move-dialog",
+    "text": "Cancel"
+   },
+   "region": "Move phase confirmation dialog",
+   "what": "Closes the dialog; the phase stays as it is.",
+   "not_for": "Cancelling the programme."
+  },
+  {
+   "key": {
+    "page": "programme-move-dialog",
+    "text": "Close dialog"
+   },
+   "region": "Move phase confirmation dialog",
+   "what": "Closes the dialog without changing the phase (same as Cancel)."
+  },
+  {
+   "key": {
+    "page": "programme-assign-crew-dialog",
+    "row_label": "Person"
+   },
+   "region": "Assign crew dialog",
+   "what": "Who to assign: every staff member and field hand, shown with their usual role. Choosing one also fills Role on this programme.",
+   "not_for": "The role; that is its own field."
+  },
+  {
+   "key": {
+    "page": "programme-assign-crew-dialog",
+    "row_label": "Role on this programme"
+   },
+   "region": "Assign crew dialog",
+   "what": "The person's role on this programme, free text; pre-filled from the chosen person.",
+   "not_for": "Choosing the person."
+  },
+  {
+   "key": {
+    "page": "programme-assign-crew-dialog",
+    "role": "button",
+    "text": "Assign"
+   },
+   "region": "Assign crew dialog",
+   "what": "Saves the assignment and closes the dialog. If the rotation overlaps the person's rotation on another live programme, it refuses, says which programme, and the dialog stays open.",
+   "not_for": "Removing anyone."
+  },
+  {
+   "key": {
+    "page": "programme-assign-crew-dialog",
+    "text": "Cancel"
+   },
+   "region": "Assign crew dialog",
+   "what": "Closes the dialog without assigning anyone.",
+   "not_for": "Removing an existing assignment."
+  },
+  {
+   "key": {
+    "page": "programme-assign-crew-dialog",
+    "text": "Close dialog"
+   },
+   "region": "Assign crew dialog",
+   "what": "Closes the dialog without assigning anyone (same as Cancel)."
+  },
+  {
+   "key": {
+    "page": "programme-logistics-item-dialog",
+    "row_label": "Kind"
+   },
+   "region": "Logistics item dialog",
+   "what": "What sort of item this is.",
+   "not_for": "Its status.",
+   "options": [
+    "charter",
+    "camp",
+    "fuel",
+    "permit",
+    "equipment",
+    "medical",
+    "freight"
+   ]
+  },
+  {
+   "key": {
+    "page": "programme-logistics-item-dialog",
+    "row_label": "Status"
+   },
+   "region": "Logistics item dialog",
+   "what": "Where the item stands: requested, booked, confirmed, delivered, or cancelled for an item that is dropped.",
+   "not_for": "Its kind.",
+   "options": [
+    "requested",
+    "booked",
+    "confirmed",
+    "delivered",
+    "cancelled"
+   ]
+  },
+  {
+   "key": {
+    "page": "programme-logistics-item-dialog",
+    "row_label": "Description"
+   },
+   "region": "Logistics item dialog",
+   "what": "What the item is, in free text. Required: Save acts once it is filled.",
+   "not_for": "The supplier's name."
+  },
+  {
+   "key": {
+    "page": "programme-logistics-item-dialog",
+    "row_label": "Supplier"
+   },
+   "region": "Logistics item dialog",
+   "what": "Who provides the item.",
+   "not_for": "The description."
+  },
+  {
+   "key": {
+    "page": "programme-logistics-item-dialog",
+    "row_label": "Cost"
+   },
+   "region": "Logistics item dialog",
+   "what": "The item's cost, a number.",
+   "not_for": "The programme budget."
+  },
+  {
+   "key": {
+    "page": "programme-logistics-item-dialog",
+    "role": "button",
+    "text": "Save"
+   },
+   "region": "Logistics item dialog",
+   "what": "Stores the item on this programme (new, or overwriting the one being edited) and closes the dialog.",
+   "not_for": "Approving a purchase order."
+  },
+  {
+   "key": {
+    "page": "programme-logistics-item-dialog",
+    "text": "Cancel"
+   },
+   "region": "Logistics item dialog",
+   "what": "Closes the form without saving.",
+   "not_for": "Cancelling the item; that is Status = cancelled and Save."
+  },
+  {
+   "key": {
+    "page": "programme-logistics-item-dialog",
+    "text": "Close dialog"
+   },
+   "region": "Logistics item dialog",
+   "what": "Closes the form without saving (same as Cancel)."
+  },
+  {
+   "key": {
+    "page": "programmes-rig-update-dialog",
+    "row_label": "Status"
+   },
+   "region": "Update rig dialog",
+   "what": "The rig's status.",
+   "not_for": "Which programme it is on.",
+   "options": [
+    "available",
+    "assigned",
+    "maintenance",
+    "demobilised"
+   ]
+  },
+  {
+   "key": {
+    "page": "programmes-rig-update-dialog",
+    "row_label": "Location"
+   },
+   "region": "Update rig dialog",
+   "what": "Where the rig is, free text.",
+   "not_for": "Its status."
+  },
+  {
+   "key": {
+    "page": "programmes-rig-update-dialog",
+    "role": "button",
+    "text": "Save"
+   },
+   "region": "Update rig dialog",
+   "what": "Applies the status and location and closes the dialog."
+  },
+  {
+   "key": {
+    "page": "programmes-rig-update-dialog",
+    "text": "Cancel"
+   },
+   "region": "Update rig dialog",
+   "what": "Closes without changing the rig."
+  },
+  {
+   "key": {
+    "page": "programmes-rig-update-dialog",
+    "text": "Close dialog"
+   },
+   "region": "Update rig dialog",
+   "what": "Closes without changing the rig (same as Cancel)."
+  },
+  {
+   "key": {
+    "role": "button",
+    "text": "Dismiss"
+   },
+   "region": "Notice at the corner of the screen",
+   "what": "Hides the notice that just confirmed or reported an action.",
+   "not_for": "Undoing the action the notice reports.",
+   "note": "Shared toast component, not specific to Programmes; merger should keep one copy."
+  }
+ ]
+}

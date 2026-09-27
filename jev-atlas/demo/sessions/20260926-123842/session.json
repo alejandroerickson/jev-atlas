@@ -1,0 +1,460 @@
+{
+ "session": "20260926-123842",
+ "goals": {
+  "G5": "tomasz answered yolanda's question on the mount aster overrun so go ahead and sign that off",
+  "G2": "sable dome's gate is coming up and i don't want to hand it over yet, the phase two results were too thin, just park it where it is for now",
+  "G3": "can you do hamish's job for a sec, the wolverine creek claim that runs out end of november, get the renewal going on it",
+  "G7": "bellamy ridge's maiden resource has to go out this week, tomasz has finished his QP review so do his step as him and then release it as me",
+  "E9": "As Tomasz Wierzbicki, create a draft resource estimate for PRJ-0409 Kettle Lake: ordinary kriging, cut-off 0.3 % Ni, Indicated 4.2 Mt at 1.35 % Ni and Inferred 6.8 Mt at 1.10 % Ni."
+ },
+ "passes": [
+  {
+   "name": "without",
+   "condition": "without",
+   "atlas_version": null,
+   "atlas_sha": null,
+   "label": "20260926-123842-without",
+   "results": {
+    "G5": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 4,
+     "model": "jev-1.13.0",
+     "wall_s": 3.5,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-without/without/20260926-123846-tomasz-answered-yolanda-s-question-on-the-mount",
+     "details": {
+      "status": "approved",
+      "required": {
+       "request_approved": true,
+       "manager_step_approved_by_marguerite": true,
+       "no_other_request_decided": true
+      },
+      "side_effects": [
+       "u-mokonkwo:approval.approved:WF-2026-0152"
+      ],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "G2": {
+     "pass": false,
+     "status": "BLOCKED",
+     "steps": 7,
+     "model": "jev-1.13.0",
+     "wall_s": 6.2,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-without/without/20260926-123855-sable-dome-s-gate-is-coming-up-and-i-don-t-want",
+     "details": {
+      "status": "active",
+      "stage": "decision",
+      "gate_actions": [],
+      "required": {
+       "status_on_hold": false,
+       "stage_unchanged_decision": true,
+       "gate_hold_recorded": false,
+       "no_gate_decision_on_other_projects": true
+      },
+      "side_effects": [
+       "u-mokonkwo:project.updated:PRJ-0433"
+      ],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "G3": {
+     "pass": false,
+     "status": "BLOCKED",
+     "steps": 23,
+     "model": "jev-1.13.0",
+     "wall_s": 19.2,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-without/without/20260926-123908-can-you-do-hamish-s-job-for-a-sec-the-wolverine",
+     "details": {
+      "status": "expiring",
+      "requests": [],
+      "required": {
+       "tenement_renewal_lodged": false,
+       "one_renewal_request": false,
+       "requested_by_hamish": false,
+       "no_other_tenement_touched": true,
+       "no_other_request_submitted": true
+      },
+      "side_effects": [],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "G7": {
+     "pass": false,
+     "status": "BLOCKED",
+     "steps": 2,
+     "model": "jev-1.13.0",
+     "wall_s": 1.9,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-without/without/20260926-123933-bellamy-ridge-s-maiden-resource-has-to-go-out-th",
+     "details": {
+      "estimate": "qp-review",
+      "request": "pending",
+      "steps": [
+       [
+        "Database sign-off",
+        "approved"
+       ],
+       [
+        "QP review",
+        null
+       ],
+       [
+        "Manager release",
+        null
+       ]
+      ],
+      "required": {
+       "estimate_released": false,
+       "request_approved": false,
+       "qp_review_by_tomasz": false,
+       "manager_release_by_marguerite": false,
+       "no_other_request_decided": true
+      },
+      "side_effects": [],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "E9": {
+     "pass": false,
+     "status": "BLOCKED",
+     "steps": 5,
+     "model": "jev-1.13.0",
+     "wall_s": 4.6,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-without/without/20260926-123941-as-tomasz-wierzbicki-create-a-draft-resource-est",
+     "details": {
+      "new": [],
+      "required": {
+       "one_new_estimate_on_PRJ-0409": false,
+       "status_draft": false,
+       "method_ordinary_kriging": false,
+       "cutoff_0.3": false,
+       "indicated_4.2_at_1.35": false,
+       "inferred_6.8_at_1.10": false,
+       "author_tomasz": false,
+       "no_other_estimate_changed": true
+      },
+      "side_effects": [],
+      "user_at_end": "u-mokonkwo"
+     }
+    }
+   }
+  },
+  {
+   "name": "with",
+   "condition": "with",
+   "atlas_version": "2026-09-22-merged-h4",
+   "atlas_sha": "42127d245c64",
+   "label": "20260926-123842-with",
+   "results": {
+    "G5": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 4,
+     "model": "jev-1.13.0",
+     "wall_s": 3.6,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-with/with/20260926-123955-tomasz-answered-yolanda-s-question-on-the-mount",
+     "details": {
+      "status": "approved",
+      "required": {
+       "request_approved": true,
+       "manager_step_approved_by_marguerite": true,
+       "no_other_request_decided": true
+      },
+      "side_effects": [
+       "u-mokonkwo:approval.approved:WF-2026-0152"
+      ],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "G2": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 6,
+     "model": "jev-1.13.0",
+     "wall_s": 6.2,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-with/with/20260926-124005-sable-dome-s-gate-is-coming-up-and-i-don-t-want",
+     "details": {
+      "status": "on-hold",
+      "stage": "decision",
+      "gate_actions": [
+       "gate.hold"
+      ],
+      "required": {
+       "status_on_hold": true,
+       "stage_unchanged_decision": true,
+       "gate_hold_recorded": true,
+       "no_gate_decision_on_other_projects": true
+      },
+      "side_effects": [
+       "u-mokonkwo:gate.hold:PRJ-0433"
+      ],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "G3": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 7,
+     "model": "jev-1.13.0",
+     "wall_s": 6.5,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-with/with/20260926-124017-can-you-do-hamish-s-job-for-a-sec-the-wolverine",
+     "details": {
+      "status": "renewal-lodged",
+      "requests": [
+       "WF-2026-0164"
+      ],
+      "required": {
+       "tenement_renewal_lodged": true,
+       "one_renewal_request": true,
+       "requested_by_hamish": true,
+       "no_other_tenement_touched": true,
+       "no_other_request_submitted": true
+      },
+      "side_effects": [
+       "u-hferrier:tenement.updated:382742",
+       "u-hferrier:approval.submitted:WF-2026-0164"
+      ],
+      "user_at_end": "u-hferrier"
+     }
+    },
+    "G7": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 10,
+     "model": "jev-1.13.0",
+     "wall_s": 8.3,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-with/with/20260926-124030-bellamy-ridge-s-maiden-resource-has-to-go-out-th",
+     "details": {
+      "estimate": "released",
+      "request": "approved",
+      "steps": [
+       [
+        "Database sign-off",
+        "approved"
+       ],
+       [
+        "QP review",
+        "approved"
+       ],
+       [
+        "Manager release",
+        "approved"
+       ]
+      ],
+      "required": {
+       "estimate_released": true,
+       "request_approved": true,
+       "qp_review_by_tomasz": true,
+       "manager_release_by_marguerite": true,
+       "no_other_request_decided": true
+      },
+      "side_effects": [
+       "u-mokonkwo:approval.approved:WF-2026-0159",
+       "u-twierzbicki:approval.approved:WF-2026-0159"
+      ],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "E9": {
+     "pass": false,
+     "status": "BLOCKED",
+     "steps": 60,
+     "model": "jev-1.13.0",
+     "wall_s": 49.7,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-with/with/20260926-124044-as-tomasz-wierzbicki-create-a-draft-resource-est",
+     "details": {
+      "new": [],
+      "required": {
+       "one_new_estimate_on_PRJ-0409": false,
+       "status_draft": false,
+       "method_ordinary_kriging": false,
+       "cutoff_0.3": false,
+       "indicated_4.2_at_1.35": false,
+       "inferred_6.8_at_1.10": false,
+       "author_tomasz": false,
+       "no_other_estimate_changed": true
+      },
+      "side_effects": [],
+      "user_at_end": "u-twierzbicki"
+     }
+    }
+   }
+  },
+  {
+   "name": "learned-1",
+   "condition": "with",
+   "atlas_version": "2026-09-22-merged-h4+learned-3",
+   "atlas_sha": "01ab2847c5c8",
+   "label": "20260926-123842-learned-1",
+   "results": {
+    "G5": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 4,
+     "model": "jev-1.13.0",
+     "wall_s": 3.6,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-learned-1/with/20260926-124216-tomasz-answered-yolanda-s-question-on-the-mount",
+     "details": {
+      "status": "approved",
+      "required": {
+       "request_approved": true,
+       "manager_step_approved_by_marguerite": true,
+       "no_other_request_decided": true
+      },
+      "side_effects": [
+       "u-mokonkwo:approval.approved:WF-2026-0152"
+      ],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "G2": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 6,
+     "model": "jev-1.13.0",
+     "wall_s": 6.2,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-learned-1/with/20260926-124226-sable-dome-s-gate-is-coming-up-and-i-don-t-want",
+     "details": {
+      "status": "on-hold",
+      "stage": "decision",
+      "gate_actions": [
+       "gate.hold"
+      ],
+      "required": {
+       "status_on_hold": true,
+       "stage_unchanged_decision": true,
+       "gate_hold_recorded": true,
+       "no_gate_decision_on_other_projects": true
+      },
+      "side_effects": [
+       "u-mokonkwo:gate.hold:PRJ-0433"
+      ],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "G3": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 7,
+     "model": "jev-1.13.0",
+     "wall_s": 6.0,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-learned-1/with/20260926-124238-can-you-do-hamish-s-job-for-a-sec-the-wolverine",
+     "details": {
+      "status": "renewal-lodged",
+      "requests": [
+       "WF-2026-0164"
+      ],
+      "required": {
+       "tenement_renewal_lodged": true,
+       "one_renewal_request": true,
+       "requested_by_hamish": true,
+       "no_other_tenement_touched": true,
+       "no_other_request_submitted": true
+      },
+      "side_effects": [
+       "u-hferrier:tenement.updated:382742",
+       "u-hferrier:approval.submitted:WF-2026-0164"
+      ],
+      "user_at_end": "u-hferrier"
+     }
+    },
+    "G7": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 10,
+     "model": "jev-1.13.0",
+     "wall_s": 8.3,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-learned-1/with/20260926-124250-bellamy-ridge-s-maiden-resource-has-to-go-out-th",
+     "details": {
+      "estimate": "released",
+      "request": "approved",
+      "steps": [
+       [
+        "Database sign-off",
+        "approved"
+       ],
+       [
+        "QP review",
+        "approved"
+       ],
+       [
+        "Manager release",
+        "approved"
+       ]
+      ],
+      "required": {
+       "estimate_released": true,
+       "request_approved": true,
+       "qp_review_by_tomasz": true,
+       "manager_release_by_marguerite": true,
+       "no_other_request_decided": true
+      },
+      "side_effects": [
+       "u-mokonkwo:approval.approved:WF-2026-0159",
+       "u-twierzbicki:approval.approved:WF-2026-0159"
+      ],
+      "user_at_end": "u-mokonkwo"
+     }
+    },
+    "E9": {
+     "pass": true,
+     "status": "DONE",
+     "steps": 14,
+     "model": "jev-1.13.0",
+     "wall_s": 15.5,
+     "run_dir": "jev-atlas/goals/runs/20260926-123842-learned-1/with/20260926-124304-as-tomasz-wierzbicki-create-a-draft-resource-est",
+     "details": {
+      "new": [
+       [
+        "RES-2026-07",
+        "draft",
+        "Ordinary kriging",
+        0.3,
+        [
+         4.2,
+         1.35
+        ],
+        [
+         6.8,
+         1.1
+        ],
+        "u-twierzbicki"
+       ]
+      ],
+      "required": {
+       "one_new_estimate_on_PRJ-0409": true,
+       "status_draft": true,
+       "method_ordinary_kriging": true,
+       "cutoff_0.3": true,
+       "indicated_4.2_at_1.35": true,
+       "inferred_6.8_at_1.10": true,
+       "author_tomasz": true,
+       "no_other_estimate_changed": true
+      },
+      "side_effects": [
+       "u-twierzbicki:estimate.saved:RES-2026-07"
+      ],
+      "user_at_end": "u-twierzbicki"
+     }
+    }
+   }
+  }
+ ],
+ "rounds": [
+  {
+   "round": 1,
+   "from_pass": "with",
+   "atlas_before": "2026-09-22-merged-h4",
+   "proposals": [
+    {
+     "goal": "E9",
+     "file": "accepted/20260926-124212-E9.json",
+     "accepted": true,
+     "diagnosis": "The run went wrong on the Resources landing page reached from the project Resource tab. The page offered All estimates, the register that leads to New estimate; the atlas framed it as browsing existing estimates. Projects looked like the route back to the chosen project, so the run looped between the project and Resources.",
+     "proposed_by": "gpt-5.5-2026-04-23"
+    }
+   ],
+   "atlas_after": "2026-09-22-merged-h4+learned-3"
+  }
+ ]
+}

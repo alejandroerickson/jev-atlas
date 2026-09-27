@@ -1,0 +1,559 @@
+{
+  "app": "ADIT",
+  "version": "2026-09-22",
+  "selectors": {
+    "dialog": [
+      "dialog[open]"
+    ]
+  },
+  "pages": [
+    {
+      "id": "approval-detail",
+      "match": {
+        "url_regex": "#/approvals/[^/?#]+"
+      },
+      "name": "Approval request",
+      "what": "One workflow request (an approval request, id format WF-YYYY-0000): its title, status chip, workflow, project and requester in the head; a notice saying whose step it is waiting on or that the step is overdue; the Request panel (what is asked, the Subject record it acts on, amount where the workflow carries one, requester, submitted and due dates, and, when the subject is a programme, its budget, spend to date, dates and phase); the Workflow steps panel listing each step with the role and person that owns it, its service level in days, and whether it is approved, returned, current or not yet reached; Comments; and other requests on the same project. What the head offers depends on who is signed in: Approve, Return and Reject appear only when the current step belongs to the signed-in user's role; Withdraw appears instead for the requester of a pending request whose current step is not theirs; a decided request (approved, returned, rejected, withdrawn) is complete. The eight workflows differ on this page in their step chain, the kind of Subject record (programme, project, estimate, tenement or purchase order), and whether an Amount is shown (programme approval, budget variance and purchase order carry one).",
+      "not_here": "Editing the subject record itself (programme budget, estimate, tenement, project): that record's own page, reached through the Subject link; approval updates it when the last step passes. Acting as the person or role that owns the current step: switch user in the account menu at the top right (People and roles lists who holds each role). Lists of requests, and the filters by view and by workflow: the Approvals queue (breadcrumb or left column). Workflow definitions and step owners: fixed by the product's support team, shown read-only under Admin, Workflows.",
+      "leads_to": {
+        "Approve / Return / Reject (head)": "approval-approve-dialog / approval-return-dialog / approval-reject-dialog",
+        "Approvals (breadcrumb) and left-column queue links": "approvals-queue",
+        "Subject link (Request panel)": "the subject record's page (programme, project, estimate, tenure or programmes list)",
+        "Project link (head)": "the project's page",
+        "Request id links (Other requests on this project)": "approval-detail"
+      },
+      "facts_js": [
+        "(() => { const h=document.querySelector('main .head h1'); if(!h) return null;\n const id=(h.querySelector('.id')?.textContent||'').trim();\n const title=[...h.childNodes].filter(n=>!(n.nodeType===1 && n.classList.contains('id'))).map(n=>n.textContent).join('').trim();\n const m=document.querySelector('main .head .meta');\n const status=(m?.querySelector('.chip')?.textContent||'').trim();\n const parts=m?[...m.children].filter(e=>!e.classList.contains('chip')).map(e=>e.textContent.trim()).filter(Boolean):[];\n return 'Request in view: '+id+' — '+title+'. Status: '+(status||'unknown')+'. Workflow and project: '+parts.join('; ')+'.'; })()",
+        "(() => { if(!document.querySelector('main .head h1')) return null;\n const who=(document.querySelector('button[aria-label*=\"Account menu\"]')?.getAttribute('aria-label')||'').replace(/\\.?\\s*Account menu.*$/,'').trim();\n const b=[...document.querySelectorAll('main .head .actions button')].filter(e=>e.checkVisibility()).map(e=>e.textContent.trim());\n const status=(document.querySelector('main .head .meta .chip')?.textContent||'').trim();\n if(b.length) return (who?who+'. ':'')+'Actions offered to you on this request: '+b.join(', ')+'.';\n return (who?who+'. ':'')+(status && status!=='pending' ? 'Request status: '+status+'; decisions on this request are complete.' : 'Decision buttons: offered to the person in the role that owns the current step, named in Workflow steps (Withdraw: to the requester). To act as that person, switch user in the account menu.'); })()",
+        "(() => { const n=[...document.querySelectorAll('main > p.notice, main .notice')].filter(e=>!e.closest('dialog')&&e.checkVisibility()).map(e=>e.textContent.trim().replace(/\\s+/g,' '));\n return n.length ? 'Notice: '+n.join(' | ') : null; })()",
+        "(() => { const li=[...document.querySelectorAll('main ol.steps > li')]; if(!li.length) return null;\n return 'Workflow steps: '+li.map(l=>{ const g=s=>(l.querySelector(s)?.textContent||'').trim().replace(/\\s+/g,' ');\n  const st=g('.d'); return g('.n')+' ('+g('.who')+')'+(st?' — '+st:' — upcoming'); }).join(' → '); })()",
+        "(() => { const kv=document.querySelector('main dl.kv'); if(!kv) return null;\n const dt=[...kv.querySelectorAll('dt')]; const txt=e=>{ if(!e) return ''; const w=document.createTreeWalker(e,4), a=[]; let n; while((n=w.nextNode())){ const t=n.textContent.trim(); if(t) a.push(t); } return a.join(' ').replace(/\\s+/g,' '); };\n const pairs=dt.map(d=>d.textContent.trim()+' = '+txt(d.nextElementSibling));\n const slots=[...document.querySelectorAll('main .stamp .slot')].map(s=>(s.querySelector('.l')?.textContent||'').trim()+' = '+(s.querySelector('.f')?.textContent||'').trim().replace(/\\s+/g,' '));\n return 'Request details: '+pairs.concat(slots).join('; '); })()",
+        "(() => { const f=document.querySelector('main form.comment-form'); if(!f) return null;\n const sec=f.closest('section'); const n=(sec?.querySelector('.ph .r')?.textContent||'').trim();\n const ta=f.querySelector('textarea'); const btn=f.querySelector('button[type=submit]');\n return 'Comments: '+(n||'0')+'. Comment box: '+(ta&&ta.value.trim()?'\"'+ta.value.trim().slice(0,80)+'\" typed, not posted':'empty')+'; Post comment '+(btn&&!btn.disabled?'enabled':'disabled until text is typed')+'.'; })()"
+      ]
+    },
+    {
+      "id": "approvals-queue",
+      "match": {
+        "url_regex": "#/approvals/?(\\?.*)?$"
+      },
+      "name": "Approvals queue",
+      "what": "The queue of workflow requests. The left column picks the cut: under Queue, Awaiting me (requests whose current step belongs to the signed-in user's role; the default view), All pending, Raised by me and Decided; under By type, one link per workflow, each showing only pending requests of that workflow. The head names the view, counts requests and overdue ones, and says who is signed in and in which role. In Awaiting me the most urgent requests (up to four) also appear as ticket cards above the table, the lead ticket first. The table lists each request's id, title, workflow, status, current step with the role that owns it, requester, amount, submitted and due dates; column headers sort it. Every id, title and ticket opens the request, which is where decisions are made. What appears under Awaiting me and Raised by me changes with the signed-in user.",
+      "not_here": "Approve, Return, Reject, Withdraw and comments: the head and panels of the request's own page (its id, title or ticket opens it). Working as another person, and so seeing the requests awaiting them: switch user in the account menu at the top right. Free-text search: the top-bar search box, across the tenant. By type links cover pending requests; decided requests are under Decided. Overdue requests also surface in the Portfolio attention ledger.",
+      "leads_to": {
+        "Ticket card, request id or title": "approval-detail",
+        "Queue and By type links (left column)": "approvals-queue (another view)"
+      },
+      "facts_js": [
+        "(() => { const h=document.querySelector('main .head h1'); if(!h) return null;\n const meta=[...document.querySelectorAll('main .head .meta > span')].map(s=>s.textContent.trim()).filter(Boolean);\n const cut=document.querySelector('nav.l2 a[aria-current=\"page\"]');\n return 'Queue view: '+h.textContent.trim()+(meta.length?' ('+meta.join('; ')+')':'')+\n  (cut?'. Highlighted in the left column: '+[...cut.childNodes].map(n=>n.textContent.trim()).filter(Boolean).join(' ')+'.':''); })()",
+        "(() => { const t=[...document.querySelectorAll('main .tickets a.ticket')]; if(!t.length) return null;\n return 'Tickets (requests whose current step is yours, most urgent first): '+t.map(a=>{\n  const g=s=>(a.querySelector(s)?.textContent||'').trim().replace(/\\s+/g,' ');\n  return g('.t')+' ['+g('.sc')+']'; }).join(' | '); })()",
+        "(() => { const tb=document.querySelector('main table.tbl'); if(!tb) return null;\n const heads=[...tb.querySelectorAll('thead th')].map(th=>th.textContent.trim().toLowerCase());\n const col=n=>heads.indexOf(n);\n const want=['request','title','workflow','status','current step','due'];\n const rows=[...tb.querySelectorAll('tbody tr')];\n const foot=(document.querySelector('main .tbl-foot')?.textContent||'').trim();\n if(!rows.length || (rows.length===1 && rows[0].cells.length===1)) return 'Table: no requests in this view.';\n const out=rows.slice(0,20).map(r=>want.filter(w=>col(w)>=0).map(w=>(r.cells[col(w)]?.textContent||'').trim().replace(/\\s+/g,' ')||'—').join(' · '));\n return 'Table rows ('+(foot||rows.length+' rows')+(rows.length>20?', first 20 shown':'')+'; request · title · workflow · status · current step and its role · due): '+out.join(' | '); })()",
+        "(() => { const th=[...document.querySelectorAll('main table.tbl thead th[aria-sort]')].find(t=>['ascending','descending'].includes(t.getAttribute('aria-sort')));\n return th ? 'Table sorted by '+th.textContent.trim()+', '+th.getAttribute('aria-sort')+'.' : null; })()"
+      ]
+    },
+    {
+      "id": "approval-approve-dialog",
+      "layer": "overlay",
+      "match": {
+        "selector": "dialog.dlg[open][aria-label^=\"Approve: \"]"
+      },
+      "name": "Approve dialog",
+      "what": "Confirms passing the current step of the request. Its summary says what happens: either the request moves to the next step (named, with its role), or this is the final step and the request will be approved and its subject updated; a budget variance also states how much the programme's approved budget rises. An optional note records conditions.",
+      "not_here": "Sending the request back for revision is Return, and ending it is Reject; both are separate dialogs from the request head. The decision is recorded when the dialog's Approve button is pressed; Cancel, the close cross or Escape leave the request as it was.",
+      "facts_js": [
+        "(() => { const d=[...document.querySelectorAll('dialog.dlg[open]')].find(e=>e.checkVisibility()); if(!d) return null;\n const t=(d.querySelector('h2')?.textContent||'').trim(); const sum=(d.querySelector('.sum')?.textContent||'').trim();\n const note=[...d.querySelectorAll('form .notice')].map(e=>e.textContent.trim()).join(' ');\n const fields=[...d.querySelectorAll('label.field')].map(l=>{ const name=(l.querySelector('span')?.textContent||'').trim();\n  const v=(l.querySelector('textarea,input')?.value||'').trim(); const err=(l.querySelector('.error')?.textContent||'').trim();\n  return name+' = '+(v?'\"'+v.slice(0,80)+'\"':'empty')+(err?' (invalid: '+err+')':''); });\n return 'Dialog: '+t+'. '+sum+(note?' '+note:'')+' Fields: '+fields.join('; ')+'.'; })()"
+      ]
+    },
+    {
+      "id": "approval-return-dialog",
+      "layer": "overlay",
+      "match": {
+        "selector": "dialog.dlg[open][aria-label=\"Return to the requester\"]"
+      },
+      "name": "Return to the requester dialog",
+      "what": "Sends the request back to its requester to revise and resubmit; the rest of the request stays as it is. A reason is required (at least 10 characters) and the dialog shows an error under Reason and stays open if it is shorter.",
+      "not_here": "Ending the workflow for good is Reject; passing the step is Approve. Cancel, the close cross or Escape leave the request unchanged, but text typed into Reason stays in the dialog if it is reopened.",
+      "facts_js": [
+        "(() => { const d=[...document.querySelectorAll('dialog.dlg[open]')].find(e=>e.checkVisibility()); if(!d) return null;\n const t=(d.querySelector('h2')?.textContent||'').trim(); const sum=(d.querySelector('.sum')?.textContent||'').trim();\n const note=[...d.querySelectorAll('form .notice')].map(e=>e.textContent.trim()).join(' ');\n const fields=[...d.querySelectorAll('label.field')].map(l=>{ const name=(l.querySelector('span')?.textContent||'').trim();\n  const v=(l.querySelector('textarea,input')?.value||'').trim(); const err=(l.querySelector('.error')?.textContent||'').trim();\n  return name+' = '+(v?'\"'+v.slice(0,80)+'\"':'empty')+(err?' (invalid: '+err+')':''); });\n return 'Dialog: '+t+'. '+sum+(note?' '+note:'')+' Fields: '+fields.join('; ')+'.'; })()"
+      ]
+    },
+    {
+      "id": "approval-reject-dialog",
+      "layer": "overlay",
+      "match": {
+        "selector": "dialog.dlg[open][aria-label^=\"Reject \"]"
+      },
+      "name": "Reject dialog",
+      "what": "Ends the workflow: the request is rejected and the requester is notified with the reason. A reason is required (at least 10 characters); a shorter one shows an error under Reason and the dialog stays open.",
+      "not_here": "Asking the requester to revise without ending the workflow is Return; passing the step is Approve. Cancel, the close cross or Escape leave the request unchanged.",
+      "facts_js": [
+        "(() => { const d=[...document.querySelectorAll('dialog.dlg[open]')].find(e=>e.checkVisibility()); if(!d) return null;\n const t=(d.querySelector('h2')?.textContent||'').trim(); const sum=(d.querySelector('.sum')?.textContent||'').trim();\n const note=[...d.querySelectorAll('form .notice')].map(e=>e.textContent.trim()).join(' ');\n const fields=[...d.querySelectorAll('label.field')].map(l=>{ const name=(l.querySelector('span')?.textContent||'').trim();\n  const v=(l.querySelector('textarea,input')?.value||'').trim(); const err=(l.querySelector('.error')?.textContent||'').trim();\n  return name+' = '+(v?'\"'+v.slice(0,80)+'\"':'empty')+(err?' (invalid: '+err+')':''); });\n return 'Dialog: '+t+'. '+sum+(note?' '+note:'')+' Fields: '+fields.join('; ')+'.'; })()"
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "key": {
+        "page": "approval-approve-dialog",
+        "role": "button",
+        "text": "Approve",
+        "text_regex": "^Approve$"
+      },
+      "region": "Dialog footer, right",
+      "what": "Confirms the approval: the current step passes, and the request moves to its next step or, on the last step, is approved and its subject updated.",
+      "not_for": "Returning or rejecting (separate dialogs). The note is optional, so this works with the note empty."
+    },
+    {
+      "key": {
+        "page": "approval-approve-dialog",
+        "role": "button",
+        "text": "Cancel",
+        "text_regex": "^Cancel$"
+      },
+      "region": "Dialog footer, left",
+      "what": "Closes the dialog; the request stays as it was.",
+      "not_for": "Confirming (that is the Approve button beside it). Typed text is kept if the dialog is reopened."
+    },
+    {
+      "key": {
+        "page": "approval-approve-dialog",
+        "text": "Close dialog"
+      },
+      "region": "Dialog title bar, top right (cross)",
+      "what": "Closes the dialog, like Cancel; the request stays as it was.",
+      "not_for": "Confirming the approve."
+    },
+    {
+      "key": {
+        "page": "approval-return-dialog",
+        "role": "button",
+        "text": "Return",
+        "text_regex": "^Return$"
+      },
+      "region": "Dialog footer, right",
+      "what": "Confirms sending the request back to the requester to revise, with the reason typed above.",
+      "not_for": "Rejecting (ends the workflow) or approving. Needs a Reason of at least 10 characters; a shorter one shows an error and keeps the dialog open."
+    },
+    {
+      "key": {
+        "page": "approval-return-dialog",
+        "role": "button",
+        "text": "Cancel",
+        "text_regex": "^Cancel$"
+      },
+      "region": "Dialog footer, left",
+      "what": "Closes the dialog; the request stays as it was.",
+      "not_for": "Confirming (that is the Return button beside it). Typed text is kept if the dialog is reopened."
+    },
+    {
+      "key": {
+        "page": "approval-return-dialog",
+        "text": "Close dialog"
+      },
+      "region": "Dialog title bar, top right (cross)",
+      "what": "Closes the dialog, like Cancel; the request stays as it was.",
+      "not_for": "Confirming the return."
+    },
+    {
+      "key": {
+        "page": "approval-reject-dialog",
+        "role": "button",
+        "text": "Reject",
+        "text_regex": "^Reject$"
+      },
+      "region": "Dialog footer, right",
+      "what": "Confirms rejecting the request: the workflow ends and the requester receives the reason typed above.",
+      "not_for": "Returning for revision (Return) or approving. Needs a Reason of at least 10 characters; a shorter one shows an error and keeps the dialog open."
+    },
+    {
+      "key": {
+        "page": "approval-reject-dialog",
+        "role": "button",
+        "text": "Cancel",
+        "text_regex": "^Cancel$"
+      },
+      "region": "Dialog footer, left",
+      "what": "Closes the dialog; the request stays as it was.",
+      "not_for": "Confirming (that is the Reject button beside it). Typed text is kept if the dialog is reopened."
+    },
+    {
+      "key": {
+        "page": "approval-reject-dialog",
+        "text": "Close dialog"
+      },
+      "region": "Dialog title bar, top right (cross)",
+      "what": "Closes the dialog, like Cancel; the request stays as it was.",
+      "not_for": "Confirming the reject."
+    },
+    {
+      "key": {
+        "page": "approval-approve-dialog",
+        "role": "textbox",
+        "row_label": "Note (optional)"
+      },
+      "region": "Approve dialog form",
+      "what": "Optional note recorded with the approval (conditions, if any) in the audit log.",
+      "not_for": "A comment on the request (that is the Comments panel) or a reason for returning or rejecting. May be left empty."
+    },
+    {
+      "key": {
+        "page": "approval-return-dialog",
+        "role": "textbox",
+        "row_label": "Reason"
+      },
+      "region": "Return dialog form",
+      "what": "Required reason sent to the requester explaining why the request is returned; at least 10 characters.",
+      "not_for": "An optional approval note or a general comment. Its label grows an error message when the reason is too short."
+    },
+    {
+      "key": {
+        "page": "approval-reject-dialog",
+        "role": "textbox",
+        "row_label": "Reason"
+      },
+      "region": "Reject dialog form",
+      "what": "Required reason sent to the requester explaining why the request is rejected; at least 10 characters.",
+      "not_for": "An optional approval note or a general comment. Its label grows an error message when the reason is too short."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "button",
+        "text": "Approve"
+      },
+      "region": "Request head, action buttons",
+      "what": "Opens the Approve dialog to pass the current step. Shown only when the current step belongs to the signed-in user's role.",
+      "not_for": "Confirming: the Approve dialog it opens. Sending back to revise: Return. Ending the workflow: Reject."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "button",
+        "text": "Return"
+      },
+      "region": "Request head, action buttons",
+      "what": "Opens the Return dialog to send the request back to its requester to revise; a reason is required. Shown only to the current step's role.",
+      "not_for": "Ending the workflow: Reject. The requester's own cancellation: Withdraw."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "button",
+        "text": "Reject"
+      },
+      "region": "Request head, action buttons",
+      "what": "Opens the Reject dialog to end the workflow; a reason is required and is sent to the requester. Shown only to the current step's role.",
+      "not_for": "Letting the requester revise and resubmit: Return."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "button",
+        "text": "Withdraw"
+      },
+      "region": "Request head, action buttons",
+      "what": "Withdraws the signed-in user's own pending request at once (no confirmation dialog observed); the request leaves every pending view.",
+      "not_for": "Deciding a step: Approve, Return and Reject, shown to the step's owner. Withdraw is shown to the requester while the current step belongs to another role."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "link",
+        "text": "Approvals"
+      },
+      "region": "Breadcrumb, above the title",
+      "what": "Opens the Approvals queue (Awaiting me view).",
+      "not_for": "The top-bar Approvals section link, which reads with its awaiting count."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "link",
+        "row_label": "pending"
+      },
+      "region": "Request head, meta line after the workflow name",
+      "what": "Opens the project this request belongs to.",
+      "not_for": "The Subject record in the Request panel, which may be a programme, estimate, tenement or order rather than the project.",
+      "note": "Keyed on the status chip text, which the harness reads as this link's row label; one entry per status."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "link",
+        "row_label": "approved"
+      },
+      "region": "Request head, meta line after the workflow name",
+      "what": "Opens the project this request belongs to.",
+      "not_for": "The Subject record in the Request panel, which may be a programme, estimate, tenement or order rather than the project.",
+      "note": "Keyed on the status chip text, which the harness reads as this link's row label; one entry per status."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "link",
+        "row_label": "returned"
+      },
+      "region": "Request head, meta line after the workflow name",
+      "what": "Opens the project this request belongs to.",
+      "not_for": "The Subject record in the Request panel, which may be a programme, estimate, tenement or order rather than the project.",
+      "note": "Keyed on the status chip text, which the harness reads as this link's row label; one entry per status."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "link",
+        "row_label": "rejected"
+      },
+      "region": "Request head, meta line after the workflow name",
+      "what": "Opens the project this request belongs to.",
+      "not_for": "The Subject record in the Request panel, which may be a programme, estimate, tenement or order rather than the project.",
+      "note": "Keyed on the status chip text, which the harness reads as this link's row label; one entry per status."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "link",
+        "row_label": "withdrawn"
+      },
+      "region": "Request head, meta line after the workflow name",
+      "what": "Opens the project this request belongs to.",
+      "not_for": "The Subject record in the Request panel, which may be a programme, estimate, tenement or order rather than the project.",
+      "note": "Keyed on the status chip text, which the harness reads as this link's row label; one entry per status."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "link",
+        "row_label": "Subject"
+      },
+      "region": "Request panel, Subject row",
+      "what": "Opens the record the request acts on; the small word before the id says its kind: programme (programme approval, budget variance, work permit), project (stage-gate decision, land access agreement), estimate (resource estimate release), tenement (tenement renewal, opens the project's tenure), purchase (purchase order, opens the project's programmes list).",
+      "not_for": "The project link in the head. Deciding the request: the head's decision buttons."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "textbox",
+        "row_label": "Add a comment"
+      },
+      "region": "Comments panel",
+      "what": "Comment on the request; comments notify the requester, and @ with a first name notifies a colleague.",
+      "not_for": "A decision note or a reason (those are in the Approve, Return and Reject dialogs). A comment leaves the request's status as it is."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "text": "Post comment"
+      },
+      "region": "Comments panel",
+      "what": "Posts the typed comment to the request's Comments list under the signed-in user's name.",
+      "not_for": "Approving or returning. Enabled once the comment box has text."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "role": "link",
+        "text_regex": "^WF-\\d{4}-\\d{4}$"
+      },
+      "region": "Other requests on this project (table, Request column)",
+      "what": "Opens that other request of the same project.",
+      "not_for": "The request in view. Sorting and filtering requests: the Approvals queue.",
+      "note": "Generic: matches every request id link in the related-requests table."
+    },
+    {
+      "key": {
+        "page": "approval-detail",
+        "text": "Dismiss"
+      },
+      "region": "Toast message, bottom of the screen",
+      "what": "Hides the confirmation message about the last action.",
+      "not_for": "Undoing the action the message reports; the action stays recorded.",
+      "note": "Toasts are an app-wide component; merger may prefer one global entry."
+    },
+    {
+      "key": {
+        "page": "approvals-queue",
+        "text": "Dismiss"
+      },
+      "region": "Toast message, bottom of the screen",
+      "what": "Hides the confirmation message about the last action.",
+      "not_for": "Undoing the action the message reports; the action stays recorded.",
+      "note": "Toasts are an app-wide component; merger may prefer one global entry."
+    },
+    {
+      "key": {
+        "page": "approvals-queue",
+        "role": "link",
+        "text_regex": "·\\s+due\\s+\\d{4}-\\d{2}-\\d{2}"
+      },
+      "region": "Tickets above the table (Awaiting me only)",
+      "what": "Opens this request: one of the most urgent requests whose current step is yours, the lead one first.",
+      "not_for": "Deciding: the request's own page, which this opens.",
+      "note": "Generic: one entry for every ticket card; the card's label is its whole text."
+    },
+    {
+      "key": {
+        "page": "approvals-queue",
+        "role": "link",
+        "text_regex": "^(Programme approval|Budget variance|Stage-gate decision|Land access agreement|Work permit|Resource release|Tenement renewal|Purchase order): (?!.*·\\s+due\\s+\\d)"
+      },
+      "region": "Approvals table, Title column",
+      "what": "Opens this request (same destination as its id).",
+      "not_for": "Filtering by workflow (the By type links on the left).",
+      "note": "Generic: matches every title link; titles start with the workflow name (resource estimate release titles start 'Resource release:')."
+    },
+    {
+      "key": {
+        "page": "approvals-queue",
+        "role": "link",
+        "text_regex": "^WF-\\d{4}-\\d{4}$"
+      },
+      "region": "Approvals table, Request column",
+      "what": "Opens this request's page.",
+      "not_for": "Sorting (the column header) or filtering.",
+      "note": "Generic: matches every request id link in the table."
+    },
+    {
+      "key": {
+        "page": "approvals-queue",
+        "role": "button",
+        "text_regex": "^Sort by "
+      },
+      "region": "Approvals table, column headers",
+      "what": "Sorts the table by this column; pressing again reverses the order. Sortable columns carry this button.",
+      "not_for": "Filtering (the left column does that). Changes the order of the rows in view.",
+      "note": "Generic: one entry for all eight sortable headers (labels 'Sort by Request' … 'Sort by Due')."
+    },
+    {
+      "key": {
+        "row_label": "Queue",
+        "role": "link",
+        "text_regex": "^Awaiting me( \\d+)?$"
+      },
+      "region": "Left column, Queue",
+      "what": "Requests whose current step belongs to the signed-in user's role (the default view, with ticket cards). The count is how many.",
+      "not_for": "Requests you raised (Raised by me) or everything pending (All pending). Changes when a different user is signed in.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "Queue",
+        "role": "link",
+        "text_regex": "^All pending( \\d+)?$"
+      },
+      "region": "Left column, Queue",
+      "what": "Every pending request in the tenant, whoever owns the current step, in due-date order.",
+      "not_for": "The ones you can act on (Awaiting me). Deciding a listed request belongs to its current step's role.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "Queue",
+        "role": "link",
+        "text_regex": "^Raised by me( \\d+)?$"
+      },
+      "region": "Left column, Queue",
+      "what": "Requests the signed-in user submitted, pending or decided; a pending one can be withdrawn from its page.",
+      "not_for": "Requests waiting on you (Awaiting me).",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "Queue",
+        "role": "link",
+        "text_regex": "^Decided( \\d+)?$"
+      },
+      "region": "Left column, Queue",
+      "what": "Closed requests: approved, returned, rejected and withdrawn.",
+      "not_for": "Pending requests (All pending, or the By type links).",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "By type",
+        "role": "link",
+        "text_regex": "^Programme approval( \\d+)?$"
+      },
+      "region": "Left column, By type",
+      "what": "Shows pending programme approval requests only (raised for a costed programme, before mobilisation). Steps: Technical review (Project Geologist) → Budget check (Finance Controller) → Manager approval (Exploration Manager). Subject is the programme; shows an amount and the programme's budget panel. Final approval makes the programme approved.",
+      "not_for": "Decided requests of this workflow (Decided), or the ones awaiting you (Awaiting me). Count after the name is pending requests.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "By type",
+        "role": "link",
+        "text_regex": "^Budget variance( \\d+)?$"
+      },
+      "region": "Left column, By type",
+      "what": "Shows pending budget variance requests only (raised for a forecast overrun above the variance threshold). Steps: Finance review (Finance Controller) → Manager approval (Exploration Manager). Subject is the programme; shows the overrun amount. Final approval raises the programme's approved budget by that amount.",
+      "not_for": "Decided requests of this workflow (Decided), or the ones awaiting you (Awaiting me). Count after the name is pending requests.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "By type",
+        "role": "link",
+        "text_regex": "^Stage-gate decision( \\d+)?$"
+      },
+      "region": "Left column, By type",
+      "what": "Shows pending stage-gate decision requests only (raised for a project at the end of a stage (advance, hold or relinquish)). Steps: Geology recommendation (Project Geologist) → Finance review (Finance Controller) → Gate decision (Exploration Manager). Subject is the project; no amount.",
+      "not_for": "Decided requests of this workflow (Decided), or the ones awaiting you (Awaiting me). Count after the name is pending requests.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "By type",
+        "role": "link",
+        "text_regex": "^Land access agreement( \\d+)?$"
+      },
+      "region": "Left column, By type",
+      "what": "Shows pending land access agreement requests only (raised for access to private or community land). Steps: Tenure review (Tenure & Permitting Officer) → Manager sign-off (Exploration Manager). Subject is the project; no amount.",
+      "not_for": "Decided requests of this workflow (Decided), or the ones awaiting you (Awaiting me). Count after the name is pending requests.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "By type",
+        "role": "link",
+        "text_regex": "^Work permit( \\d+)?$"
+      },
+      "region": "Left column, By type",
+      "what": "Shows pending work permit requests only (raised for ground disturbance (a regulatory permit)). Steps: Permit lodgement → Regulator decision (both Tenure & Permitting Officer). Subject is the programme; no amount.",
+      "not_for": "Decided requests of this workflow (Decided), or the ones awaiting you (Awaiting me). Count after the name is pending requests.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "By type",
+        "role": "link",
+        "text_regex": "^Resource estimate release( \\d+)?$"
+      },
+      "region": "Left column, By type",
+      "what": "Shows pending resource estimate release requests only (raised for an estimate leaving review). Steps: Database sign-off (Database Geologist) → QP review (Project Geologist) → Manager release (Exploration Manager). Subject is the estimate; no amount. Final approval releases the estimate.",
+      "not_for": "Decided requests of this workflow (Decided), or the ones awaiting you (Awaiting me). Count after the name is pending requests.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "By type",
+        "role": "link",
+        "text_regex": "^Tenement renewal( \\d+)?$"
+      },
+      "region": "Left column, By type",
+      "what": "Shows pending tenement renewal requests only (raised for a tenement before expiry). Steps: Expenditure check (Finance Controller) → Renewal lodgement (Tenure & Permitting Officer). Subject is the tenement; no amount. Final approval records the renewal as lodged.",
+      "not_for": "Decided requests of this workflow (Decided), or the ones awaiting you (Awaiting me). Count after the name is pending requests.",
+      "note": "Label carries a live count after the name."
+    },
+    {
+      "key": {
+        "row_label": "By type",
+        "role": "link",
+        "text_regex": "^Purchase order( \\d+)?$"
+      },
+      "region": "Left column, By type",
+      "what": "Shows pending purchase order requests only (raised for orders above the delegated limit). Steps: Logistics check (Field Logistics Coordinator) → Finance approval (Finance Controller). Subject is the purchase order; shows the order amount.",
+      "not_for": "Decided requests of this workflow (Decided), or the ones awaiting you (Awaiting me). Count after the name is pending requests.",
+      "note": "Label carries a live count after the name."
+    }
+  ]
+}
