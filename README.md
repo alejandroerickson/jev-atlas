@@ -16,7 +16,7 @@ code checks them, a person accepts them, and the atlas is rebuilt.
 **Blog post:** [Jev Atlas: teaching a fast browser agent an enterprise app](https://alejandroerickson.com/2026/09/27/jev-atlas.html) 
 · **The app:** [ADIT](https://alejandroerickson.com/mockent/adit/) ([source](https://github.com/alejandroerickson/mockent))
 
-[![Watch the video: Jev on ADIT's Bellamy Ridge task, without the atlas and then with it (YouTube)](docs/video-thumbnail.jpg)](https://youtu.be/YRixZluuXb8)
+[![Watch the video: the Bellamy Ridge task in the jev-ultrafast inspector, without the atlas and then with it (YouTube)](docs/video-thumbnail.jpg)](https://youtu.be/YRixZluuXb8)
 
 On five tasks, Jev finished 1 without the atlas, 4 with it, and all 5 after one learning
 round. Repeated five times each afterwards: 5/25 without the atlas, 25/25 with it. It is a
